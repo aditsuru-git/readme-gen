@@ -1,0 +1,32 @@
+# Git / Version Control
+.git/
+.gitignore
+
+# Dependencies (these are installed by the user via package.json, not bundled)
+node_modules/
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# Development Assets / Configuration / Tests
+# Only include files needed to RUN the generator
+assets/          # Exclude source assets (logos, screenshots) for the generator's own docs
+test/            # Standard directory for tests (if you add them)
+*.test.js        # Common test file pattern
+*.spec.js        # Alternative test file pattern
+coverage/        # Code coverage reports
+*.log            # Log files
+
+# Editor/IDE specific folders
+.vscode/
+.idea/
+
+# Common configuration files (usually dev-related)
+.eslintrc.*
+.prettierrc.*
+tsconfig.json
+jest.config.*
+
+# The ignore file itself (optional, doesn't hurt to include)
+.npmignore

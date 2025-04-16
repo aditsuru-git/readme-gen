@@ -1,140 +1,60 @@
-# ${PROJECT_TITLE}
+# README Generator
 
-<div align="center">
-  <img src="https://ik.imagekit.io/aditsuru/Personal/yet-another-banner.png?updatedAt=1744792463836" alt="Project Banner" width="100%" style="max-width: 1200px;">
-</div>
+A CLI tool that generates beautiful README.md files for your projects with a single command.
 
-<a id="readme-top"></a>
+## Installation
 
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![License][license-shield]][license-url]
+```bash
+# Install globally
+npm install -g @aditsuru/readme-generator
 
-<br></br>
-
-<div align="center">
-  <p align="center">
-    <img src="${LOGO_URL}" alt="Logo" width="80" height="80">
-    <h3 align="center">${PROJECT_TITLE}</h3>
-    <p align="center">
-      ${PROJECT_DESCRIPTION}
-      <br />
-      <a href="https://github.com/${GITHUB_USERNAME}/${REPO_NAME}/docs"><strong>Explore the docs »</strong></a>
-      <br />
-      <br />
-      <a href="https://github.com/${GITHUB_USERNAME}/${REPO_NAME}">View Demo</a>
-      ·
-      <a href="https://github.com/${GITHUB_USERNAME}/${REPO_NAME}/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
-      ·
-      <a href="https://github.com/${GITHUB_USERNAME}/${REPO_NAME}/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
-    </p>
-  </p>
-</div>
-
-<!-- TABLE OF CONTENTS -->
-<details>
-  <summary>Table of Contents</summary>
-  <ol>
-    <li>
-      <a href="#about">About The Project</a>
-      <ul>
-        <li><a href="#built-with">Built With</a></li>
-      </ul>
-    </li>
-    <li>
-      <a href="#getting-started">Getting Started</a>
-      <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
-      </ul>
-    </li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
-  </ol>
-</details>
-
-<!-- ABOUT THE PROJECT -->
-
-## About
-
-<div align="center">
-  <img src="${SCREENSHOT_URL}" alt="Product Screenshot" width="100%" style="max-width: 800px;">
-</div>
-
-${PROJECT_LONG_DESCRIPTION}
-
-### Built With
-
-[![Tech][Tech-badge]][Tech-url]
-
-<!-- GETTING STARTED -->
-
-## Getting Started
-
-To get started with ${PROJECT_TITLE}, follow these simple steps.
-
-### Prerequisites
-
-List things needed to use the software and how to install them:
-
-```sh
-npm install npm@latest -g
+# Or use with npx (no installation required)
+npx @aditsuru/readme-generator
 ```
-
-### Installation
-
-1. Lorem
-
-<!-- USAGE EXAMPLES -->
 
 ## Usage
 
-${USAGE_DESCRIPTION}
+Run the tool in your project directory:
 
-## Top contributors:
+```bash
+# Using the globally installed version
+readme-gen
 
-<a href="https://github.com/${GITHUB_USERNAME}/${REPO_NAME}/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=${GITHUB_USERNAME}/${REPO_NAME}" alt="Contributors" />
-</a>
+# Or using npx without installation
+npx @aditsuru/readme-generator
+```
 
-<!-- LICENSE -->
+### Command Line Options
+
+```
+Options:
+  -V, --version                  output the version number
+  -n, --name <n>                 project name
+  -d, --description <description> short project description
+  -u, --username <username>      GitHub username
+  -r, --repo <repo>              repository name
+  -s, --skip-prompts             skip all prompts and use defaults or provided options
+  -o, --output <path>            output path for README file (default: "./README.md")
+  -h, --help                     display help for command
+```
+
+### Example
+
+```bash
+# Generate a README with specific options
+npx @aditsuru/readme-generator --name "My Awesome Project" --description "A tool that makes life easier" --username "aditsuru-git" --repo "awesome-tool"
+
+# Generate a README without prompts
+npx @aditsuru/readme-generator --skip-prompts
+```
+
+## Features
+
+- Interactive prompts for README details
+- Customizable templates
+- Ready-to-use badges and links
+- Markdown formatting
 
 ## License
 
-Distributed under the ${LICENSE_TYPE} License. See `LICENSE` for more information.
-
-<!-- ACKNOWLEDGMENTS -->
-
-## Acknowledgments
-
-- [Choose an Open Source License](https://choosealicense.com)
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<h1></h1>
-
-<div align="center">
-  <img src="https://ik.imagekit.io/aditsuru/Personal/footer.png?updatedAt=1744794750533" alt="Footer Banner" width="100%" style="max-width: 1200px;">
-</div>
-
-<!-- MARKDOWN LINKS & IMAGES -->
-
-[contributors-shield]: https://img.shields.io/github/contributors/${GITHUB_USERNAME}/${REPO_NAME}.svg?style=for-the-badge
-[contributors-url]: https://github.com/${GITHUB_USERNAME}/${REPO_NAME}/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/${GITHUB_USERNAME}/${REPO_NAME}.svg?style=for-the-badge
-[forks-url]: https://github.com/${GITHUB_USERNAME}/${REPO_NAME}/network/members
-[stars-shield]: https://img.shields.io/github/stars/${GITHUB_USERNAME}/${REPO_NAME}.svg?style=for-the-badge
-[stars-url]: https://github.com/${GITHUB_USERNAME}/${REPO_NAME}/stargazers
-[issues-shield]: https://img.shields.io/github/issues/${GITHUB_USERNAME}/${REPO_NAME}.svg?style=for-the-badge
-[issues-url]: https://github.com/${GITHUB_USERNAME}/${REPO_NAME}/issues
-[license-shield]: https://img.shields.io/github/license/${GITHUB_USERNAME}/${REPO_NAME}.svg?style=for-the-badge
-[license-url]: https://github.com/${GITHUB_USERNAME}/${REPO_NAME}/blob/master/LICENSE
-
-<!-- TECH STACK BADGE -->
-
-[Tech-badge]: https://img.shields.io/badge/${TECH_NAME}-${TECH_COLOR}?style=for-the-badge&logo=${TECH_LOGO}&logoColor=white
-[Tech-url]: ${TECH_URL}
+MIT
