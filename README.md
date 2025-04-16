@@ -132,7 +132,7 @@ Distributed under the ${LICENSE_TYPE} License. See `LICENSE` for more informatio
 [issues-shield]: https://img.shields.io/github/issues/${GITHUB_USERNAME}/${REPO_NAME}.svg?style=for-the-badge
 [issues-url]: https://github.com/${GITHUB_USERNAME}/${REPO_NAME}/issues
 [license-shield]: https://img.shields.io/github/license/${GITHUB_USERNAME}/${REPO_NAME}.svg?style=for-the-badge
-[license-url]: https://github.com/${GITHUB_USERNAME}/${REPO_NAME}/blob/master/LICENSE.txt
+[license-url]: https://github.com/${GITHUB_USERNAME}/${REPO_NAME}/blob/master/LICENSE
 
 <!-- TECH STACK BADGE -->
 
