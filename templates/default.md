@@ -1,7 +1,7 @@
 # ${PROJECT_TITLE}
 
 <div align="center">
-  <img src="https://ik.imagekit.io/aditsuru/Personal/yet-another-banner.png?updatedAt=1744792463836" alt="Project Banner" width="100%" style="max-width: 1200px;">
+  <img src="https://raw.githubusercontent.com/aditsuru-git/readme-gen/refs/heads/main/assets/header.png" alt="Project Banner" width="100%" style="max-width: 1200px;">
 </div>
 
 <a id="readme-top"></a>
@@ -16,7 +16,7 @@
 
 <div align="center">
   <p align="center">
-    <img src="${LOGO_URL}" alt="Logo" width="80" height="80">
+    <img src="https://raw.githubusercontent.com/aditsuru-git/readme-gen/refs/heads/main/assets/icon.png" alt="Logo" width="80" height="80">
     <h3 align="center">${PROJECT_TITLE}</h3>
     <p align="center">
       ${PROJECT_DESCRIPTION}
@@ -62,7 +62,7 @@
 ## About
 
 <div align="center">
-  <img src="${SCREENSHOT_URL}" alt="Product Screenshot" width="100%" style="max-width: 800px;">
+  <img src="https://raw.githubusercontent.com/aditsuru-git/readme-gen/refs/heads/main/assets/screenshot.png" alt="Product Screenshot" width="100%" style="max-width: 800px;">
 </div>
 
 ${PROJECT_LONG_DESCRIPTION}
@@ -149,7 +149,7 @@ Distributed under the ${LICENSE_TYPE} License. See `LICENSE` for more informatio
 <h1></h1>
 
 <div align="center">
-  <img src="https://ik.imagekit.io/aditsuru/Personal/footer.png?updatedAt=1744794750533" alt="Footer Banner" width="100%" style="max-width: 1200px;">
+  <img src="https://raw.githubusercontent.com/aditsuru-git/readme-gen/refs/heads/main/assets/footer.png" alt="Footer Banner" width="100%" style="max-width: 1200px;">
 </div>
 
 <!-- MARKDOWN LINKS & IMAGES -->
