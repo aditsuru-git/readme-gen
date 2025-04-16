@@ -1,7 +1,8 @@
 # README Generator
 
 <div align="center">
-  <img src="https://raw.githubusercontent.com/aditsuru-git/readme-gen/refs/heads/main/assets/header.png" alt="Project Banner" width="100%" style="max-width: 1200px;">
+  <!-- Optional Header Banner -->
+  <!-- <img src="https://raw.githubusercontent.com/aditsuru-git/readme-gen/refs/heads/main/assets/header.png" alt="Project Banner" width="100%" style="max-width: 1200px;"> -->
 </div>
 
 <a id="readme-top"></a>
@@ -11,21 +12,22 @@
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
 [![License][license-shield]][license-url]
+[![NPM Version][npm-shield]][npm-url]
 
 <br></br>
 
 <div align="center">
   <p align="center">
     <img src="https://raw.githubusercontent.com/aditsuru-git/readme-gen/refs/heads/main/assets/icon.png" alt="Logo" width="80" height="80">
-    <h3 align="center">README Generator</h3>
+    <h3 align="center">README Generator (@aditsuru/readme-gen)</h3>
     <p align="center">
-      A command line tool to generate README files based on templates
+      Generate professional README.md files for your projects instantly using an interactive CLI.
       <br />
-      <a href="https://github.com/aditsuru-git/readme-gen/docs"><strong>Explore the docs »</strong></a>
+      <!-- <a href="https://github.com/aditsuru-git/readme-gen/docs"><strong>Explore the docs »</strong></a> -->
+      <!-- <br /> -->
       <br />
-      <br />
-      <a href="https://github.com/aditsuru-git/readme-gen">View Demo</a>
-      ·
+      <!-- <a href="https://github.com/aditsuru-git/readme-gen">View Demo</a> -->
+      <!-- · -->
       <a href="https://github.com/aditsuru-git/readme-gen/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
       ·
       <a href="https://github.com/aditsuru-git/readme-gen/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
@@ -40,6 +42,7 @@
     <li>
       <a href="#about">About The Project</a>
       <ul>
+        <li><a href="#features">Features</a></li>
         <li><a href="#built-with">Built With</a></li>
       </ul>
     </li>
@@ -62,54 +65,118 @@
 ## About
 
 <div align="center">
-  <img src="https://raw.githubusercontent.com/aditsuru-git/readme-gen/refs/heads/main/assets/screenshot.png" alt="Product Screenshot" width="100%" style="max-width: 800px;">
+  <img src="https://raw.githubusercontent.com/aditsuru-git/readme-gen/refs/heads/main/assets/screenshot.png" alt="CLI Screenshot" width="100%" style="max-width: 800px;">
 </div>
 
-A command line tool to generate README files based on templates Add more details about your project here.
+`@aditsuru/readme-gen` is a command-line tool that helps you quickly generate a well-structured `README.md` file for your projects. It uses an interactive prompt system powered by `@clack/prompts` to guide you through providing the necessary project details and then populates a predefined template.
+
+### Features
+
+- **Interactive CLI:** Uses `@clack/prompts` for a clean and guided setup process.
+- **Template-Based:** Generates READMEs from a predefined template (`templates/default.md`).
+- **Placeholder Replacement:** Automatically fills in project name, description, GitHub username, repo name, etc.
+- **CLI Options:** Customize generation via command-line flags (skip prompts, set output path, etc.).
+- **Conditional Header:** Optionally include a specific header image for learning projects.
+- **Sensible Defaults:** Provides default values for quick generation.
 
 ### Built With
 
-[![Tech][Tech-badge]][Tech-url]
+[![Node.js][Node-badge]][Node-url]
 
-<!-- Add more tech badges as needed using the format below -->
+<!-- Add more tech badges as needed using the format: -->
 <!-- [![Name][Name-badge]][Name-url] -->
 
 <!-- GETTING STARTED -->
 
 ## Getting Started
 
-To get started with README Generator, follow these simple steps.
+To get started with `readme-gen`, follow these simple steps.
 
 ### Prerequisites
 
-List things needed to use the software and how to install them:
+You need Node.js and npm installed on your system to run this tool.
 
-```sh
-npm install npm@latest -g
-```
+- npm (Node Package Manager)
+  ```sh
+  npm install npm@latest -g
+  ```
 
 ### Installation
 
-1. Clone the repository
-   ```sh
-   git clone https://github.com/aditsuru-git/readme-gen.git
-   ```
-2. Install NPM packages
-   ```sh
-   npm install
-   ```
-3. Configure your environment
-   ```sh
-   cp .env.example .env
-   ```
+You can use the tool directly with `npx` without installation, or install it globally.
+
+1.  **Using npx (Recommended)**
+    ```sh
+    npx @aditsuru/readme-gen [options]
+    ```
+2.  **Global Installation**
+    ```sh
+    npm install -g @aditsuru/readme-gen
+    ```
 
 <!-- USAGE EXAMPLES -->
 
 ## Usage
 
-Add examples for how to use your project here.
+Navigate to your project's root directory in your terminal and run the command:
 
-_For more examples, please refer to the [Documentation](https://github.com/aditsuru-git/readme-gen/docs)_
+```bash
+# Using npx
+npx @aditsuru/readme-gen
+
+# Or if installed globally
+readme-gen
+```
+
+The tool will interactively ask you for project details.
+
+### Command Line Options
+
+You can bypass the prompts or provide details directly using flags:
+
+```
+Usage: readme-gen [options]
+
+📝 Generate a README file for your project
+
+Options:
+  -V, --version                  output the version number
+  -n, --name <name>              project name
+  -d, --description <description> short project description
+  -u, --username <username>      GitHub username
+  -r, --repo <repo>              repository name
+  -l, --learning                 include learning project header image
+  -s, --skip-prompts             skip all prompts and use defaults or provided options
+  -o, --output <path>            output path for README file (default: "./README.md")
+  -h, --help                     display help for command
+```
+
+### Examples
+
+1.  **Interactive Mode:**
+
+    ```bash
+    npx @aditsuru/readme-gen
+    ```
+
+    _(Follow the prompts)_
+
+2.  **Provide details via flags and skip prompts:**
+
+    ```bash
+    npx @aditsuru/readme-gen -s \
+      -n "My Super App" \
+      -d "An application that does amazing things." \
+      -u "your-github-user" \
+      -r "super-app-repo" \
+      -o "docs/README.md"
+    ```
+
+3.  **Generate with the learning project header:**
+    ```bash
+    npx @aditsuru/readme-gen -l
+    ```
+    _(Will prompt for other details unless `-s` is also used)_
 
 ## Contributing
 
@@ -118,36 +185,36 @@ Contributions are what make the open source community such an amazing place to l
 If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
 Don't forget to give the project a star! Thanks again!
 
-1. Fork the Project
+1. Fork the Project (`https://github.com/aditsuru-git/readme-gen/fork`)
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
 3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## Top contributors:
+<!-- ## Top contributors:
 
 <a href="https://github.com/aditsuru-git/readme-gen/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=aditsuru-git/readme-gen" alt="Contributors" />
-</a>
+</a> -->
 
 <!-- LICENSE -->
 
 ## License
 
-Distributed under the MIT License. See `LICENSE` for more information.
+Distributed under the MIT License. See `LICENSE` file for more information.
 
 <!-- ACKNOWLEDGMENTS -->
 
 ## Acknowledgments
 
-- [Choose an Open Source License](https://choosealicense.com)
-- [Img Shields](https://shields.io)
-- [GitHub Pages](https://pages.github.com)
+- [@clack/prompts](https://github.com/natemoo-re/clack)
+- [Commander.js](https://github.com/tj/commander.js/)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<h1></h1>
+<!-- Optional Footer Banner -->
 
+<h1></h1>
 <div align="center">
   <img src="https://raw.githubusercontent.com/aditsuru-git/readme-gen/refs/heads/main/assets/footer.png" alt="Footer Banner" width="100%" style="max-width: 1200px;">
 </div>
@@ -163,9 +230,11 @@ Distributed under the MIT License. See `LICENSE` for more information.
 [issues-shield]: https://img.shields.io/github/issues/aditsuru-git/readme-gen.svg?style=for-the-badge
 [issues-url]: https://github.com/aditsuru-git/readme-gen/issues
 [license-shield]: https://img.shields.io/github/license/aditsuru-git/readme-gen.svg?style=for-the-badge
-[license-url]: https://github.com/aditsuru-git/readme-gen/blob/master/LICENSE
+[license-url]: https://github.com/aditsuru-git/readme-gen/blob/main/LICENSE
+[npm-shield]: https://img.shields.io/npm/v/@aditsuru/readme-gen.svg?style=for-the-badge
+[npm-url]: https://www.npmjs.com/package/@aditsuru/readme-gen
 
-<!-- TECH STACK BADGE -->
+<!-- BUILT WITH BADGES - Add URLs -->
 
-[Tech-badge]: https://img.shields.io/badge/tech-stack-blue?style=for-the-badge&logo=codesandbox&logoColor=white
-[Tech-url]: #built-with
+[Node-badge]: https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white
+[Node-url]: https://nodejs.org/
