@@ -20,7 +20,7 @@ async function generateReadme(config) {
 		// --- Conditional Header Logic ---
 		if (!config.isLearningProject) {
 			const headerStartMarker =
-				'<div align="center">\n  <img src="https://ik.imagekit.io/aditsuru/Personal/yet-another-banner.png'; // Use the actual URL from your template
+				'<div align="center">\n  <img src="https://raw.githubusercontent.com/aditsuru-git/readme-gen/refs/heads/main/assets/header.png'; // Use the actual URL from your template
 			const headerEndMarker = '</div>\n\n<a id="readme-top"></a>';
 
 			const startIndex = templateContent.indexOf(headerStartMarker);

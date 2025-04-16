@@ -121,9 +121,8 @@ async function main() {
 		await generateReadme(config);
 		s.stop("README generated successfully!");
 
-		p.log.success(`Your README has been saved to: ${config.outputPath}`);
-		p.note(
-			"Make sure to replace any remaining placeholders (like usage examples, prerequisites, etc.) in the generated file."
+		p.log.success(
+			`Your README has been saved to: ${config.outputPath}\nMake sure to replace any remaining placeholders (like usage examples, prerequisites, etc.) in the generated file.`
 		);
 
 		p.outro("Happy coding!");
