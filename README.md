@@ -12,6 +12,8 @@
 [![Issues][issues-shield]][issues-url]
 [![License][license-shield]][license-url]
 
+<h1></h1>
+<br></br>
 <div align="center">
   <p align="center">
     <img src="${LOGO_URL}" alt="Logo" width="80" height="80">
