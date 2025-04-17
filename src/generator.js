@@ -1,68 +1,70 @@
+// src/generator.js
 import fs from "fs/promises";
 import path from "path";
-import { fileURLToPath } from "url"; // Needed for __dirname in ESM
 
-// Get __dirname equivalent in ES module
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-/**
- * Generate a README file based on the template and configuration
- * @param {Object} config - Configuration options
- * @returns {Promise<void>}
- */
-async function generateReadme(config) {
+// Helper function to safely read text file
+async function readTextFile(filePath) {
 	try {
-		// Read the template file
-		const templatePath = path.join(__dirname, "../templates/default.md");
-		let templateContent = await fs.readFile(templatePath, "utf8");
-
-		// --- Conditional Header Logic ---
-		if (!config.isLearningProject) {
-			const headerStartMarker =
-				'<div align="center">\n  <img src="https://raw.githubusercontent.com/aditsuru-git/readme-gen/refs/heads/main/assets/header.png'; // Use the actual URL from your template
-			const headerEndMarker = '</div>\n\n<a id="readme-top"></a>';
-
-			const startIndex = templateContent.indexOf(headerStartMarker);
-			const endIndex = templateContent.indexOf(headerEndMarker);
-
-			if (startIndex !== -1 && endIndex !== -1) {
-				templateContent =
-					templateContent.slice(0, startIndex) + templateContent.slice(endIndex + headerEndMarker.length);
-			} else {
-				console.warn("Could not find header markers in template to remove it conditionally.");
-			}
-			// Remove the initial H1 title if the header is removed
-			templateContent = templateContent.replace(`# ${config.projectName}\n\n`, "");
-		}
-		// --- End Conditional Header Logic ---
-
-		// --- Replace ONLY text/data placeholders ---
-		templateContent = templateContent
-			.replace(/\$\{PROJECT_TITLE\}/g, config.projectName)
-			.replace(/\$\{PROJECT_DESCRIPTION\}/g, config.projectDescription)
-			.replace(/\$\{GITHUB_USERNAME\}/g, config.githubUsername)
-			.replace(/\$\{REPO_NAME\}/g, config.repoName)
-			// --- REMOVED .replace for LOGO_URL ---
-			// --- REMOVED .replace for SCREENSHOT_URL ---
-			.replace(
-				/\$\{PROJECT_LONG_DESCRIPTION\}/g,
-				`${config.projectDescription} Add more details about your project here.`
-			)
-			.replace(/\$\{USAGE_DESCRIPTION\}/g, "Add examples for how to use your project here.")
-			.replace(/\$\{LICENSE_TYPE\}/g, "MIT")
-			.replace(/\$\{TECH_NAME\}/g, "tech-stack")
-			.replace(/\$\{TECH_COLOR\}/g, "blue")
-			.replace(/\$\{TECH_LOGO\}/g, "codesandbox")
-			.replace(/\$\{TECH_URL\}/g, "#built-with");
-
-		// Write the generated README file
-		const outputPath = path.resolve(config.outputPath); // Resolve to absolute path
-		await fs.mkdir(path.dirname(outputPath), { recursive: true }); // Ensure directory exists
-		await fs.writeFile(outputPath, templateContent, "utf8");
+		return await fs.readFile(filePath, "utf8");
 	} catch (error) {
-		throw new Error(`Failed to generate README at ${config.outputPath}: ${error.message}`);
+		if (error instanceof Error && error.code === "ENOENT") {
+			// Throw specific error for file not found
+			throw new Error(`Template file not found at: ${filePath}`, { cause: error });
+		}
+		// Throw generic error for other read issues
+		throw new Error(`Failed to read template file: ${filePath}`, { cause: error });
 	}
 }
 
-export { generateReadme };
+/**
+ * Generates file content by replacing placeholders in a template.
+ * @param {string} templatePath - Absolute path to the template file.
+ * @param {object} answers - An object containing key-value pairs for placeholder replacement.
+ * @param {string} outputPath - Absolute path for the output file (used for error context).
+ * @returns {Promise<string>} - The processed template content.
+ */
+async function generateContent(templatePath, answers, outputPath) {
+	let templateContent = await readTextFile(templatePath);
+
+	// Replace placeholders
+	for (const [key, value] of Object.entries(answers)) {
+		// Use a RegExp that shouldn't capture nested ${} accidentally
+		// Match ${key}, handle potential special chars in key if necessary
+		// For simplicity, assuming keys are reasonably simple variable names
+		const placeholder = new RegExp(`\\$\\{${key}\\}`, "g");
+
+		// Format value for replacement
+		let replacementValue = value;
+		if (Array.isArray(value)) {
+			replacementValue = value.length > 0 ? value.join(", ") : "";
+		} else if (typeof value === "boolean") {
+			replacementValue = value ? "true" : "false";
+		}
+		// Ensure replacement is a string, default to empty string for null/undefined
+		replacementValue = replacementValue ?? "";
+
+		templateContent = templateContent.replace(placeholder, String(replacementValue));
+	}
+
+	return templateContent;
+}
+
+/**
+ * Writes the generated content to the specified output file.
+ * @param {string} outputPath - Absolute path for the output file.
+ * @param {string} content - The content to write.
+ * @returns {Promise<void>}
+ */
+async function writeFile(outputPath, content) {
+	try {
+		// Ensure the output directory exists before writing
+		await fs.mkdir(path.dirname(outputPath), { recursive: true });
+		await fs.writeFile(outputPath, content, "utf8");
+	} catch (error) {
+		// Throw specific error for writing issues
+		throw new Error(`Failed to write output file to: ${outputPath}`, { cause: error });
+	}
+}
+
+// Export the core functions needed by the CLI
+export { generateContent, writeFile };
