@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
-// bin/index.js - Main Entry Point
+// bin/index.js - Main Entry Point & Argument Parser
 
 import { program } from "commander"; // For parsing command-line arguments
 import colors from "picocolors"; // For coloring console output
-import path from "path"; // For resolving default output path if needed (now handled by commander)
+import path from "path"; // For resolving relative paths to absolute
 import { runCli } from "../src/cli.js"; // Import the main CLI execution logic
 import * as configManager from "../src/config.js"; // Import all config management functions
 import { checkForUpdates } from "../src/utils.js"; // Import the update checker utility
@@ -14,11 +14,11 @@ import { createRequire } from "module"; // Helper for reading package.json in ES
 const require = createRequire(import.meta.url);
 // Load package details for version and name (provide fallback name)
 const { version: currentVersion, name: packageName = "readme-gen" } = require("../package.json");
-// Define the default output path if no argument is provided
+// Define the default output path if no output argument is provided
 const defaultOutputPath = "./README.md";
 
 // --- Asynchronous Update Check ---
-// Check for updates in the background. Don't wait for it, and don't let errors stop the main command.
+// Check for updates in the background. Doesn't block execution or throw errors on failure.
 checkForUpdates(currentVersion, packageName);
 
 // --- Command Definitions using Commander ---
@@ -46,22 +46,23 @@ program
 		let baseSourceArg = null;
 		let outputPathArg = defaultOutputPath; // Initialize with default
 
-		// Interpret the positional arguments based on how many were provided
+		// --- Interpret Positional Arguments ---
+		// Determine if the user provided a base source, an output path, both, or neither.
 		if (sourceOrOutputArgs.length === 1) {
-			// If only one arg, it's the base_source *unless* explicit flags (-t/-c or -n) are used,
-			// in which case it's the output_path.
+			// If only one arg, it's the base_source *unless* specific sourcing flags (-t/-c or -n) are used,
+			// in which case, we assume the user intended it as the output_path.
 			if (!options.template && !options.config && !options.name) {
 				baseSourceArg = sourceOrOutputArgs[0];
-				// Output path remains the default
+				// Output path remains the default defined earlier
 			} else {
-				outputPathArg = sourceOrOutputArgs[0]; // It must be the output path
+				outputPathArg = sourceOrOutputArgs[0]; // It must be the output path override
 			}
 		} else if (sourceOrOutputArgs.length === 2) {
 			// If two args, it must be base_source followed by output_path
 			baseSourceArg = sourceOrOutputArgs[0];
 			outputPathArg = sourceOrOutputArgs[1];
 		} else if (sourceOrOutputArgs.length > 2) {
-			// More than two positional args is an error
+			// More than two positional args is invalid for this command structure
 			console.error(colors.red("Error: Too many positional arguments provided."));
 			console.error(colors.dim("Usage: readme-gen [base_source] [output_path] [options]"));
 			process.exit(1); // Exit with error code
@@ -70,44 +71,77 @@ program
 
 		// --- Validate Option Combinations ---
 		const usingName = !!options.name;
-		const usingExplicitSources = !!(options.template || options.config); // Check if either is present initially
-		const usingBaseSource = !!baseSourceArg;
+		// Check if *either* explicit flag is present (they must be used together)
+		const usingExplicitSourcesFlags = !!(options.template || options.config);
+		const usingBaseSourceArg = !!baseSourceArg;
 
-		// Count how many modes are being attempted
-		const modesUsedCount = [usingName, usingExplicitSources, usingBaseSource].filter(Boolean).length;
+		// Count how many *distinct sourcing methods* are being attempted
+		const modesUsedCount = [usingName, usingExplicitSourcesFlags, usingBaseSourceArg].filter(Boolean).length;
 
 		if (modesUsedCount > 1) {
 			// User provided conflicting inputs (e.g., -n and -t, or -n and base_source)
 			console.error(colors.red("Error: Conflicting options. Use only one sourcing method:"));
-			console.error(colors.dim("  --name <saved_name>"));
-			console.error(colors.dim("  --template <path/url> --config <path/url>"));
-			console.error(colors.dim("  [base_source_path_or_url]"));
+			console.error(colors.dim(`  --name <saved_name>`));
+			console.error(colors.dim(`  --template <path/url> --config <path/url>`));
+			console.error(colors.dim(`  [base_source_path_or_url]`));
 			process.exit(1);
 		}
 
-		// If explicit sources are attempted, both must be provided
-		if (usingExplicitSources && (!options.template || !options.config)) {
+		// If explicit sources are attempted via flags, *both* must be provided
+		if (usingExplicitSourcesFlags && (!options.template || !options.config)) {
 			console.error(
-				colors.red("Error: Both --template and --config must be provided together when using explicit source flags.")
+				colors.red("Error: Both --template AND --config must be provided together when using explicit source flags.")
 			);
 			process.exit(1);
 		}
+
+		// Prevent trying to use the reserved name for the built-in default via -n
+		if (usingName && options.name === configManager.BUILT_IN_DEFAULT_NAME) {
+			console.error(
+				colors.red(
+					`Error: Cannot directly request the "${configManager.BUILT_IN_DEFAULT_NAME}" template using -n. It's used automatically as a fallback.`
+				)
+			);
+			process.exit(1);
+		}
+
+		// --- Resolve Local Paths to Absolute BEFORE passing to runCli ---
+		// This ensures paths saved or used later are not dependent on the CWD where the command was run.
+		const isUrl = (src) => typeof src === "string" && (src.startsWith("http://") || src.startsWith("https://"));
+
+		const templateSourceFinal =
+			options.template && !isUrl(options.template)
+				? path.resolve(options.template) // Resolve local path
+				: options.template; // Keep URL as is
+
+		const configSourceFinal =
+			options.config && !isUrl(options.config)
+				? path.resolve(options.config) // Resolve local path
+				: options.config; // Keep URL as is
+
+		const baseSourceFinal =
+			baseSourceArg && !isUrl(baseSourceArg)
+				? path.resolve(baseSourceArg) // Resolve local path
+				: baseSourceArg; // Keep URL as is
+		// --- End Path Resolution ---
 
 		// --- Execute the Core CLI Logic ---
 		try {
-			// Call the main CLI runner from src/cli.js, passing the determined arguments/options
+			// Call the main CLI runner from src/cli.js, passing the determined arguments/options.
+			// Note: We pass the *potentially resolved* sources here. runCli will handle
+			// further resolution if a named or default template is used (which might itself
+			// point to a base source that needs resolving).
 			await runCli(
-				options.template || null, // Pass explicit template source or null
-				options.config || null, // Pass explicit config source or null
+				templateSourceFinal || null, // Pass resolved/original template source or null
+				configSourceFinal || null, // Pass resolved/original config source or null
 				options.name || null, // Pass saved template name or null
-				baseSourceArg, // Pass base source argument or null
+				baseSourceFinal, // Pass resolved/original base source argument or null
 				outputPathArg // Pass the final output path (always a string)
 			);
 		} catch (e) {
-			// This catch block is primarily for errors *before* runCli takes over
-			// (e.g., very early config manager errors, though unlikely now).
-			// runCli has its own more detailed error handling.
-			console.error(colors.red(`\nError during initial setup: ${e?.message || e}`));
+			// This catch block is primarily for errors during the *initial setup* or argument validation
+			// before runCli takes over. runCli has its own more detailed error handling.
+			console.error(colors.red(`\nError during CLI setup: ${e?.message || e}`));
 			process.exit(1);
 		}
 	});
@@ -116,30 +150,42 @@ program
 // Create a subcommand 'template' for managing saved configurations
 const templateCmd = program
 	.command("template")
-	.description("Manage saved template configurations (local paths or URLs)");
+	.description("Manage saved user template configurations (local paths or URLs)");
 
 // Action: template add
 templateCmd
 	.command("add <name> <source...>") // Use variadic 'source...' to capture 1 or 2 source args
-	.description("Save a new template config. Provide name and EITHER base_source OR template_source config_source.")
+	.description("Save a template config. Provide name and EITHER base_source OR template_source config_source.")
 	.on("--help", () => {
 		// Add specific help text for this command
 		console.log("");
 		console.log("Examples:");
-		console.log("  $ readme-gen template add my-local ./local/template/dir");
-		console.log("  $ readme-gen template add my-repo https://github.com/user/repo");
-		console.log("  $ readme-gen template add my-explicit ./tmpl.md ./conf.json");
-		console.log("  $ readme-gen template add my-remote-explicit <template_url> <config_url>");
+		console.log(`  $ ${packageName} template add my-local ./local/template/dir`);
+		console.log(`  $ ${packageName} template add my-repo https://github.com/user/repo`);
+		console.log(`  $ ${packageName} template add my-explicit ./tmpl.md ./conf.json`);
+		console.log(`  $ ${packageName} template add my-remote-explicit <template_url> <config_url>`);
 	})
 	.action((name, sources) => {
+		// Prevent using the reserved internal name
+		if (name === configManager.BUILT_IN_DEFAULT_NAME) {
+			console.error(
+				colors.red(`Error: "${configManager.BUILT_IN_DEFAULT_NAME}" is a reserved name and cannot be used.`)
+			);
+			process.exit(1);
+		}
 		try {
 			// Check the number of source arguments provided
 			if (sources.length === 1) {
-				// One source means it's a 'base' type template
-				configManager.addTemplate(name, sources[0], null); // Pass null for the second arg
+				// --- Resolve local base source path to ABSOLUTE before saving ---
+				const baseSourceResolved = sources[0].startsWith("http") ? sources[0] : path.resolve(sources[0]);
+				// Add as base source type
+				configManager.addTemplate(name, baseSourceResolved, null); // Pass null for the second arg
 			} else if (sources.length === 2) {
-				// Two sources mean it's an 'explicit' type template
-				configManager.addTemplate(name, sources[0], sources[1]);
+				// --- Resolve local explicit paths to ABSOLUTE before saving ---
+				const templateSourceResolved = sources[0].startsWith("http") ? sources[0] : path.resolve(sources[0]);
+				const configSourceResolved = sources[1].startsWith("http") ? sources[1] : path.resolve(sources[1]);
+				// Add as explicit sources type
+				configManager.addTemplate(name, templateSourceResolved, configSourceResolved);
 			} else {
 				// Invalid number of source arguments
 				console.error(colors.red("Error: Invalid number of sources provided for 'add'."));
@@ -161,13 +207,11 @@ templateCmd
 templateCmd
 	.command("list")
 	.alias("ls") // Allow using 'ls' as a shorter alias
-	.description("List all saved template configurations")
+	.description("List saved user template configurations") // Clarify user templates
 	.action(() => {
-		// No arguments needed, just call the list function
 		try {
 			configManager.listTemplates();
 		} catch (e) {
-			// Handle potential errors reading the config file (though unlikely with conf)
 			console.error(colors.red(`Error listing templates: ${e.message}`));
 			process.exit(1);
 		}
@@ -177,13 +221,17 @@ templateCmd
 templateCmd
 	.command("remove <name>")
 	.alias("rm") // Allow using 'rm' as a shorter alias
-	.description("Remove a saved template configuration by name")
+	.description("Remove a saved user template configuration by name") // Clarify user templates
 	.action((name) => {
+		// Prevent removing the reserved internal name
+		if (name === configManager.BUILT_IN_DEFAULT_NAME) {
+			console.error(colors.red(`Error: Cannot remove the ${configManager.BUILT_IN_DEFAULT_NAME} template.`));
+			process.exit(1);
+		}
 		try {
-			// Call remove function, handles "not found" error internally
 			configManager.removeTemplate(name);
 		} catch (e) {
-			// Display errors caught from configManager
+			// Display errors caught from configManager (e.g., not found)
 			console.error(colors.red(`Error removing template "${name}": ${e.message}`));
 			process.exit(1);
 		}
@@ -192,8 +240,17 @@ templateCmd
 // Action: template default
 templateCmd
 	.command("default <name>")
-	.description("Set a saved template configuration as the default")
+	.description("Set a saved user template configuration as the default") // Clarify user templates
 	.action((name) => {
+		// Prevent setting the reserved internal name as default
+		if (name === configManager.BUILT_IN_DEFAULT_NAME) {
+			console.error(
+				colors.red(
+					`Error: Cannot set the ${configManager.BUILT_IN_DEFAULT_NAME} as default; it's the automatic fallback.`
+				)
+			);
+			process.exit(1);
+		}
 		try {
 			// Call set default function, handles "not found" error internally
 			configManager.setDefaultTemplate(name);
@@ -205,6 +262,7 @@ templateCmd
 	});
 
 // --- Parse Arguments ---
-// Process the command-line arguments based on the definitions above
+// Process the command-line arguments based on the definitions above.
 // Commander handles executing the appropriate .action() based on input.
+// Errors within actions should call process.exit, preventing fall-through.
 program.parse(process.argv);

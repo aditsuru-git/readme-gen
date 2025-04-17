@@ -9,7 +9,7 @@ export const DEFAULT_CONFIG_FILENAME = "readme-config.json";
 // Constants for identifying the type of saved template configuration
 export const TEMPLATE_TYPE_EXPLICIT = "explicit"; // Saved with separate template and config sources
 export const TEMPLATE_TYPE_BASE = "base"; // Saved with a single base directory/URL source
-
+export const BUILT_IN_DEFAULT_NAME = "<built-in>";
 // Define the schema for the configuration file to ensure structure
 // This helps prevent errors if the config file gets corrupted manually
 const schema = {

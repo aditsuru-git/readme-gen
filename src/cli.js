@@ -1,10 +1,26 @@
-// src/cli.js
-import path from "path"; // For path manipulation (resolve, relative, dirname)
-import * as p from "@clack/prompts"; // Import clack library
-import colors from "picocolors"; // For coloring output
+// src/cli.js - UI Orchestration & Workflow
+import path from "path"; // For path manipulation
+import { fileURLToPath } from "node:url"; // Needed for finding built-in templates relative path
+import * as p from "@clack/prompts"; // Import clack library (ONLY used here)
+import colors from "picocolors"; // For coloring output (ONLY used here for UI)
 import { generateContent, writeFile } from "./generator.js"; // Import core generator functions
 import { getContent, resolveFromBaseSource } from "./utils.js"; // Import utility functions
-import * as configManager from "./config.js"; // Import all named exports from config manager
+// Import specific config functions needed for source resolution & default handling
+import {
+	getTemplate,
+	getDefaultTemplate, // Specific getter for user-set default data
+	getDefaultTemplateName, // Gets name of user-set default
+	TEMPLATE_TYPE_BASE, // Constant for type checking
+	TEMPLATE_TYPE_EXPLICIT, // Constant for type checking
+	BUILT_IN_DEFAULT_NAME, // Constant for the reserved name
+} from "./config.js";
+
+// --- Helper to find the root 'templates' directory relative to this file ---
+// This assumes your final build structure keeps templates relative to src
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+// Resolve the path to the 'templates' directory that ships with the package
+const BUILT_IN_TEMPLATES_DIR = path.resolve(__dirname, "../templates");
 
 /**
  * Safely parses JSON content, providing context on error.
@@ -19,15 +35,11 @@ function parseConfigContent(content, sourceDescription) {
 	try {
 		config = JSON.parse(content);
 	} catch (error) {
-		// Catch JSON parsing errors specifically
 		if (error instanceof SyntaxError) {
 			throw new Error(`Invalid JSON syntax in configuration source: ${sourceDescription}`, { cause: error });
 		}
-		// Re-throw other unexpected errors during parsing
 		throw new Error(`Failed to parse configuration content from: ${sourceDescription}`, { cause: error });
 	}
-
-	// Basic validation for the expected structure
 	if (!config || !Array.isArray(config.prompts)) {
 		throw new Error(`Invalid config format in ${sourceDescription}: Root object must have a 'prompts' array.`);
 	}
@@ -35,9 +47,9 @@ function parseConfigContent(content, sourceDescription) {
 }
 
 /**
- * Runs the main generation workflow.
- * Determines sources, fetches/reads content, runs prompts, generates, and writes the file.
- * Handles UI feedback and operational errors.
+ * Runs the main generation workflow: determines sources, fetches/reads content,
+ * runs prompts via Clack, generates final content, and writes the output file.
+ * Handles UI feedback (spinner, logs, intro/outro) and operational errors.
  *
  * @param {string|null} templateSourceOpt - Explicit template source from -t flag, or null.
  * @param {string|null} configSourceOpt - Explicit config source from -c flag, or null.
@@ -48,87 +60,103 @@ function parseConfigContent(content, sourceDescription) {
  */
 async function runCli(templateSourceOpt, configSourceOpt, namedTemplateOpt, baseSourceArg, outputPath) {
 	// Start the Clack UI block
-	p.intro(`📝 ${colors.blue("readme-gen")}`); // Consider using pkgName if passed down
+	p.intro(`📝 README GENERATOR`);
 
-	let actualTemplateSource = null;
-	let actualConfigSource = null;
-	let sourceDescriptionForErrors = "unknown source"; // Used in error messages
+	let actualTemplateSource = null; // Final path/URL for the template file
+	let actualConfigSource = null; // Final path/URL for the config file
+	let sourceDescriptionForErrors = "unknown source"; // For context in error messages
+	let usingBuiltInDefault = false; // Flag to track if we fell back to built-in
 
-	const s = p.spinner(); // Initialize the spinner
+	const s = p.spinner(); // Initialize the spinner for progress indication
 
 	try {
 		s.start("Resolving template and configuration sources...");
 
 		// --- Determine Actual Sources based on user input priority ---
+		// Highest priority: -n flag (named template)
 		if (namedTemplateOpt) {
-			// Priority 1: Use a named template configuration from storage
-			sourceDescriptionForErrors = `saved template "${namedTemplateOpt}"`;
-			const savedConfigData = configManager.getTemplate(namedTemplateOpt); // Throws if name not found
+			sourceDescriptionForErrors = `saved user template "${namedTemplateOpt}"`;
+			const savedData = getTemplate(namedTemplateOpt); // Throws if name not found
 
-			if (savedConfigData.type === configManager.TEMPLATE_TYPE_BASE) {
-				// Resolve the base source into specific file paths/URLs
-				const resolved = resolveFromBaseSource(savedConfigData.baseSource);
+			if (savedData.type === TEMPLATE_TYPE_BASE) {
+				const resolved = resolveFromBaseSource(savedData.baseSource);
 				actualTemplateSource = resolved.finalTemplateSource;
 				actualConfigSource = resolved.finalConfigSource;
-				sourceDescriptionForErrors += ` (from base: ${savedConfigData.baseSource})`;
+				sourceDescriptionForErrors += ` (from base: ${savedData.baseSource})`;
 			} else {
 				// Explicit type
-				actualTemplateSource = savedConfigData.templateSource;
-				actualConfigSource = savedConfigData.configSource;
+				actualTemplateSource = savedData.templateSource;
+				actualConfigSource = savedData.configSource;
 			}
 			s.stop(`Using saved template: ${colors.cyan(namedTemplateOpt)}`);
+
+			// Next priority: Explicit -t and -c flags
 		} else if (templateSourceOpt && configSourceOpt) {
-			// Priority 2: Use explicit sources provided via -t and -c flags
 			actualTemplateSource = templateSourceOpt;
 			actualConfigSource = configSourceOpt;
-			sourceDescriptionForErrors = `explicit sources provided via flags`;
+			sourceDescriptionForErrors = `explicit sources from flags`;
 			s.stop(`Using explicit sources from flags.`);
+
+			// Next priority: Positional base source argument
 		} else if (baseSourceArg) {
-			// Priority 3: Use the base source provided as a positional argument
 			sourceDescriptionForErrors = `base source argument "${baseSourceArg}"`;
 			const resolved = resolveFromBaseSource(baseSourceArg);
 			actualTemplateSource = resolved.finalTemplateSource;
 			actualConfigSource = resolved.finalConfigSource;
 			s.stop(`Using base source: ${colors.cyan(baseSourceArg)}`);
-		} else {
-			// Priority 4: Fallback to the default saved template configuration
-			sourceDescriptionForErrors = "default template configuration";
-			const savedDefaultData = configManager.getDefaultTemplate();
-			if (!savedDefaultData) {
-				// Throw if no input provided AND no default is set
-				throw new Error(
-					"No source specified and no default template is set.\n" +
-						colors.dim(
-							"Use flags (-t, -c), name (-n), a base source argument, or set a default ('readme-gen template default <name>')."
-						)
-				);
-			}
-			const defaultName = configManager.getDefaultTemplateName();
-			sourceDescriptionForErrors = `default template "${defaultName}"`;
 
-			if (savedDefaultData.type === configManager.TEMPLATE_TYPE_BASE) {
-				// Resolve the default base source
-				const resolved = resolveFromBaseSource(savedDefaultData.baseSource);
-				actualTemplateSource = resolved.finalTemplateSource;
-				actualConfigSource = resolved.finalConfigSource;
-				sourceDescriptionForErrors += ` (from base: ${savedDefaultData.baseSource})`;
+			// Next priority: User-defined default saved template
+		} else {
+			const userDefaultData = getDefaultTemplate(); // Check if user has set a default
+			if (userDefaultData) {
+				const defaultName = getDefaultTemplateName();
+				sourceDescriptionForErrors = `user default template "${defaultName}"`;
+				if (userDefaultData.type === TEMPLATE_TYPE_BASE) {
+					const resolved = resolveFromBaseSource(userDefaultData.baseSource);
+					actualTemplateSource = resolved.finalTemplateSource;
+					actualConfigSource = resolved.finalConfigSource;
+					sourceDescriptionForErrors += ` (from base: ${userDefaultData.baseSource})`;
+				} else {
+					// Explicit type
+					actualTemplateSource = userDefaultData.templateSource;
+					actualConfigSource = userDefaultData.configSource;
+				}
+				s.stop(`Using user default template: ${colors.cyan(defaultName)}`);
 			} else {
-				// Explicit type
-				actualTemplateSource = savedDefaultData.templateSource;
-				actualConfigSource = savedDefaultData.configSource;
+				// --- Final Fallback: Use the BUILT-IN default template ---
+				usingBuiltInDefault = true;
+				sourceDescriptionForErrors = `built-in default template`;
+				// Construct paths to the built-in files relative to this script's location
+				actualTemplateSource = path.join(BUILT_IN_TEMPLATES_DIR, "default-template.md");
+				actualConfigSource = path.join(BUILT_IN_TEMPLATES_DIR, "default-config.json");
+				s.stop(`Using ${colors.cyan(BUILT_IN_DEFAULT_NAME)} template (no other source specified).`);
 			}
-			s.stop(`Using default template: ${colors.cyan(defaultName)}`);
 		}
 
 		// --- 1. Fetch/Read Template and Config Content ---
 		s.start("Loading template and config content...");
-		// Fetch/read both concurrently for efficiency
-		const [templateContent, configContent] = await Promise.all([
-			getContent(actualTemplateSource, "template"), // getContent handles local path vs URL
-			getContent(actualConfigSource, "config"),
-		]);
+		// Add extra logging if using built-in, helps debug missing package files
+		if (usingBuiltInDefault) {
+			p.log.info(`Attempting to load built-in template: ${actualTemplateSource}`);
+			p.log.info(`Attempting to load built-in config: ${actualConfigSource}`);
+		}
 
-		// Parse the config content after fetching/reading it
+		// Fetch/read both concurrently
+		const [templateContent, configContent] = await Promise.all([
+			getContent(actualTemplateSource, "template"), // getContent handles local vs URL
+			getContent(actualConfigSource, "config"),
+		]).catch((err) => {
+			// Provide specific feedback if built-in files are missing during load
+			if (usingBuiltInDefault && err.message?.includes("Cannot find")) {
+				throw new Error(
+					`Failed to load required ${BUILT_IN_DEFAULT_NAME} files from the package installation.\nSource Error: ${err.message}`,
+					{ cause: err }
+				);
+			}
+			throw err; // Re-throw other loading errors
+		});
+
+		// Parse the config content AFTER it's loaded
 		const config = parseConfigContent(configContent, actualConfigSource); // Pass source for context in errors
 		s.stop("Template and config loaded successfully.");
 
@@ -161,48 +189,31 @@ async function runCli(templateSourceOpt, configSourceOpt, namedTemplateOpt, base
 			try {
 				switch (promptConfig.type.toLowerCase()) {
 					case "text":
-						// Add validation function only if 'required' is true
-						const validate = promptConfig.required
-							? (val) => (!val ? `${name} is required!` : undefined) // Return error message if invalid, undefined if valid
-							: undefined; // No validation if not required
-						value = await p.text({
-							...commonOptions,
-							placeholder: promptConfig.placeholder || "", // Optional placeholder text
-							validate,
-						});
+						const validate = promptConfig.required ? (val) => (!val ? `${name} is required!` : undefined) : undefined;
+						value = await p.text({ ...commonOptions, placeholder: promptConfig.placeholder || "", validate });
 						break;
 					case "confirm":
-						// Clack's confirm defaults initialValue to false if not provided or null/undefined
-						value = await p.confirm({
-							...commonOptions,
-							initialValue: commonOptions.initialValue ?? false,
-						});
+						value = await p.confirm({ ...commonOptions, initialValue: commonOptions.initialValue ?? false });
 						break;
 					case "select":
-						// Validate options array
-						if (!Array.isArray(promptConfig.options) || promptConfig.options.length === 0) {
-							throw new Error(`'options' array is missing, empty, or invalid for select prompt: ${name}`);
-						}
+						if (!Array.isArray(promptConfig.options) || promptConfig.options.length === 0)
+							throw new Error(`'options' array missing/invalid for select: ${name}`);
 						value = await p.select({
 							...commonOptions,
-							// Clack can handle simple string arrays or objects with { value, label, hint }
 							options: promptConfig.options.map((opt) => (typeof opt === "string" ? { value: opt, label: opt } : opt)),
 						});
 						break;
 					case "multiselect":
-						// Validate options array
-						if (!Array.isArray(promptConfig.options) || promptConfig.options.length === 0) {
-							throw new Error(`'options' array is missing, empty, or invalid for multiselect prompt: ${name}`);
-						}
+						if (!Array.isArray(promptConfig.options) || promptConfig.options.length === 0)
+							throw new Error(`'options' array missing/invalid for multiselect: ${name}`);
 						value = await p.multiselect({
 							...commonOptions,
 							options: promptConfig.options.map((opt) => (typeof opt === "string" ? { value: opt, label: opt } : opt)),
-							required: promptConfig.required ?? false, // Use required flag from config (defaults to false if missing)
+							required: promptConfig.required ?? false,
 						});
 						break;
 					default:
-						// Handle unsupported prompt types defined in the config
-						throw new Error(`Unsupported prompt type "${promptConfig.type}" found in config for variable "${name}"`);
+						throw new Error(`Unsupported prompt type "${promptConfig.type}" for: ${name}`);
 				}
 			} catch (promptError) {
 				// Wrap errors occurring during prompt execution with more context
@@ -220,23 +231,24 @@ async function runCli(templateSourceOpt, configSourceOpt, namedTemplateOpt, base
 		}
 
 		// --- 3. Generate Final Content ---
-		s.start("Generating file content...");
-		// Call the synchronous generator function with the raw template content and collected answers
+		s.start(`Writing output to ${colors.cyan(relativeOutputPath)}...`);
+		// Call the synchronous generator function from generator.js
 		const generatedOutput = generateContent(templateContent, answers);
-		s.stop("File content generated.");
 
 		// --- 4. Write Output File ---
-		const relativeOutputPath = path.relative(process.cwd(), outputPath) || "."; // Get relative path for message
-		s.start(`Writing output to ${colors.cyan(relativeOutputPath)}...`);
-		await writeFile(outputPath, generatedOutput); // writeFile handles directory creation and writing
+		// Get relative path for clearer user message
+		const relativeOutputPath = path.relative(process.cwd(), outputPath) || ".";
+
+		// Call the async write function from generator.js
+		await writeFile(outputPath, generatedOutput); // writeFile handles directory creation
 		s.stop("File written successfully!");
 
 		// --- Success Outro ---
 		p.outro(`Done. Output saved to ${colors.cyan(relativeOutputPath)}`);
 	} catch (error) {
-		// Catch errors from any step: resolving sources, reading files, parsing, prompting, generating, writing
+		// Catch errors from any step and provide feedback
 		s.stop("Operation failed.", 1); // Ensure spinner stops with error indicator
-		p.log.error(colors.red("An error occurred during generation:"));
+		p.log.error(colors.red(`An error occurred (source: ${sourceDescriptionForErrors}):`));
 
 		// Log the specific error message and cause if available
 		if (error instanceof Error) {
@@ -248,7 +260,7 @@ async function runCli(templateSourceOpt, configSourceOpt, namedTemplateOpt, base
 				console.error(colors.dim(` -> Cause: ${causeMessage}`));
 			}
 		} else {
-			// Fallback for non-Error exceptions (less common)
+			// Fallback for non-Error exceptions
 			console.error(`\n${colors.red(error)}`);
 		}
 

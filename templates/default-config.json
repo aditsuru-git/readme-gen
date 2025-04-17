@@ -1,0 +1,11 @@
+{
+	"prompts": [
+		{
+			"name": "projectName",
+			"type": "text",
+			"message": "Enter the project name:",
+			"required": true,
+			"placeholder": "A Project"
+		}
+	]
+}
