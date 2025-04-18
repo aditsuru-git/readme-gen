@@ -27,52 +27,29 @@ checkForUpdates(currentVersion, packageName);
 program
 	.name(packageName) // Display the package name in help messages
 	.version(currentVersion, "-V, --version", "Output the current version") // Add version flag
-	.usage("[options] [source_or_output...]") // Customize usage string
+	.usage("[base_source] [options]") // Updated usage string
 	.description("📝 Generate files from custom templates and configurations.")
-	// Define positional arguments: Optional base source and optional output path
-	// '...' makes it variadic (accepts 0, 1, or 2 arguments)
+	// Define ONE optional positional argument for the base source
 	.argument(
-		"[source_or_output...]",
-		`Optional: Base source path/URL and/or output path (default output: ${defaultOutputPath})`
+		"[base_source]",
+		`Optional: Base source path/URL (uses default filenames: ${configManager.DEFAULT_TEMPLATE_FILENAME}, ${configManager.DEFAULT_CONFIG_FILENAME})`
 	)
 	// Define options for explicit source specification or using saved names
 	.option("-t, --template <source>", "Path or URL to the template file (requires -c)")
 	.option("-c, --config <source>", "Path or URL to the config file (requires -t)")
 	.option("-n, --name <name>", "Use a saved template configuration by name")
+	.option("-o, --output <path>", "Path to save the generated file", defaultOutputPath) // Added output option
 	// Define the action to run when the main command is invoked
-	.action(async (sourceOrOutputArgs, options) => {
-		// This function runs when `readme-gen` is called without a subcommand
-
-		let baseSourceArg = null;
-		let outputPathArg = defaultOutputPath; // Initialize with default
-
-		// --- Interpret Positional Arguments ---
-		// Determine if the user provided a base source, an output path, both, or neither.
-		if (sourceOrOutputArgs.length === 1) {
-			// If only one arg, it's the base_source *unless* specific sourcing flags (-t/-c or -n) are used,
-			// in which case, we assume the user intended it as the output_path.
-			if (!options.template && !options.config && !options.name) {
-				baseSourceArg = sourceOrOutputArgs[0];
-				// Output path remains the default defined earlier
-			} else {
-				outputPathArg = sourceOrOutputArgs[0]; // It must be the output path override
-			}
-		} else if (sourceOrOutputArgs.length === 2) {
-			// If two args, it must be base_source followed by output_path
-			baseSourceArg = sourceOrOutputArgs[0];
-			outputPathArg = sourceOrOutputArgs[1];
-		} else if (sourceOrOutputArgs.length > 2) {
-			// More than two positional args is invalid for this command structure
-			console.error(colors.red("Error: Too many positional arguments provided."));
-			console.error(colors.dim("Usage: readme-gen [base_source] [output_path] [options]"));
-			process.exit(1); // Exit with error code
-		}
-		// If sourceOrOutputArgs.length is 0, baseSourceArg remains null and outputPathArg remains defaultOutputPath.
+	.action(async (baseSourceArg, options) => {
+		// Updated action signature
+		// baseSourceArg is now the value of the optional [base_source] argument or null
+		// options now contains options.output (defaults to './README.md')
 
 		// --- Validate Option Combinations ---
 		const usingName = !!options.name;
 		// Check if *either* explicit flag is present (they must be used together)
 		const usingExplicitSourcesFlags = !!(options.template || options.config);
+		// Check if the positional base source argument was provided
 		const usingBaseSourceArg = !!baseSourceArg;
 
 		// Count how many *distinct sourcing methods* are being attempted
@@ -123,6 +100,9 @@ program
 			baseSourceArg && !isUrl(baseSourceArg)
 				? path.resolve(baseSourceArg) // Resolve local path
 				: baseSourceArg; // Keep URL as is
+
+		// Resolve the output path to absolute as well
+		const outputPathFinal = path.resolve(options.output);
 		// --- End Path Resolution ---
 
 		// --- Execute the Core CLI Logic ---
@@ -136,7 +116,7 @@ program
 				configSourceFinal || null, // Pass resolved/original config source or null
 				options.name || null, // Pass saved template name or null
 				baseSourceFinal, // Pass resolved/original base source argument or null
-				outputPathArg // Pass the final output path (always a string)
+				outputPathFinal // Pass the final, resolved output path
 			);
 		} catch (e) {
 			// This catch block is primarily for errors during the *initial setup* or argument validation

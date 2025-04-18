@@ -135,11 +135,6 @@ async function runCli(templateSourceOpt, configSourceOpt, namedTemplateOpt, base
 
 		// --- 1. Fetch/Read Template and Config Content ---
 		s.start("Loading template and config content...");
-		// Add extra logging if using built-in, helps debug missing package files
-		if (usingBuiltInDefault) {
-			p.log.info(`Attempting to load built-in template: ${actualTemplateSource}`);
-			p.log.info(`Attempting to load built-in config: ${actualConfigSource}`);
-		}
 
 		// Fetch/read both concurrently
 		const [templateContent, configContent] = await Promise.all([
@@ -161,7 +156,7 @@ async function runCli(templateSourceOpt, configSourceOpt, namedTemplateOpt, base
 		s.stop("Template and config loaded successfully.");
 
 		// --- 2. Run Interactive Prompts ---
-		p.log.step("Gathering project details...");
+		// p.log.step("Gathering project details...");
 		const answers = {}; // Initialize object to store answers
 
 		// Loop through each prompt defined in the loaded config's "prompts" array
@@ -222,7 +217,7 @@ async function runCli(templateSourceOpt, configSourceOpt, namedTemplateOpt, base
 
 			// Check if the user cancelled the prompt (e.g., Ctrl+C)
 			if (p.isCancel(value)) {
-				p.cancel("Operation cancelled by user."); // Standard Clack cancellation message
+				p.cancel("Operation cancelled"); // Standard Clack cancellation message
 				process.exit(0); // Exit gracefully with success code (0) for user cancellation
 			}
 
@@ -231,17 +226,17 @@ async function runCli(templateSourceOpt, configSourceOpt, namedTemplateOpt, base
 		}
 
 		// --- 3. Generate Final Content ---
-		s.start(`Writing output to ${colors.cyan(relativeOutputPath)}...`);
 		// Call the synchronous generator function from generator.js
 		const generatedOutput = generateContent(templateContent, answers);
 
 		// --- 4. Write Output File ---
 		// Get relative path for clearer user message
 		const relativeOutputPath = path.relative(process.cwd(), outputPath) || ".";
+		s.start(`Writing output to ${colors.cyan(relativeOutputPath)}...`);
 
 		// Call the async write function from generator.js
 		await writeFile(outputPath, generatedOutput); // writeFile handles directory creation
-		s.stop("File written successfully!");
+		s.stop("File written successfully to ${colors.cyan(relativeOutputPath)}!");
 
 		// --- Success Outro ---
 		p.outro(`Done. Output saved to ${colors.cyan(relativeOutputPath)}`);

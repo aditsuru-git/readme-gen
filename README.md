@@ -16,7 +16,7 @@
     <img src="https://raw.githubusercontent.com/aditsuru-git/readme-gen/main/assets/icon.png" alt="Logo" width="80" height="80">
     <h3 align="center">README Generator (@aditsuru/readme-gen)</h3>
     <p align="center">
-      Generate project READMEs (or other files!) quickly from custom templates using an interactive CLI.
+      Generate project READMEs (or other files!) quickly from custom templates using an interactive CLI. Supports variable substitution and conditional content blocks.
       <br />
       <!-- <a href="https://github.com/aditsuru-git/readme-gen/docs"><strong>Explore the docs »</strong></a> -->
       <!-- <br /> -->
@@ -56,7 +56,12 @@
     </li>
     <li><a href="#creating-custom-templates">Creating Custom Templates</a>
         <ul>
-            <li><a href="#template-file-md">Template File (.md)</a></li>
+            <li><a href="#template-file-md">Template File (.md)</a>
+                <ul>
+                    <li><a href="#variable-substitution">Variable Substitution</a></li>
+                    <li><a href="#conditional-blocks-ifendif">Conditional Blocks (IF/ENDIF)</a></li>
+                </ul>
+            </li>
             <li><a href="#configuration-file-json">Configuration File (.json)</a></li>
             <li><a href="#prompt-types">Prompt Types & Options</a></li>
         </ul>
@@ -75,7 +80,7 @@
   <img src="https://raw.githubusercontent.com/aditsuru-git/readme-gen/main/assets/screenshot.png" alt="CLI Screenshot" width="100%" style="max-width: 800px;">
 </div>
 
-`@aditsuru/readme-gen` is a command-line tool designed to streamline the creation of README files (or any text-based boilerplate) for your projects. It works by processing a template file (`.md`) and interactively asking you questions defined in a corresponding configuration file (`.json`). Your answers are then injected into the template to produce the final output file.
+`@aditsuru/readme-gen` is a command-line tool designed to streamline the creation of README files (or any text-based boilerplate) for your projects. It works by processing a template file (`.md`) and interactively asking you questions defined in a corresponding configuration file (`.json`). Your answers are then injected into the template, and conditional blocks are processed, to produce the final output file.
 
 It supports using local template files, fetching templates from public GitHub repositories, saving configurations for quick reuse, and comes with a built-in default README template.
 
@@ -108,7 +113,7 @@ You can use the tool directly with `npx` without installation, or install it glo
 
 1.  **Using npx (Recommended for one-off use)**
     ```sh
-    npx @aditsuru/readme-gen [options_or_args]
+    npx @aditsuru/readme-gen [base_source] [options]
     ```
 2.  **Global Installation**
     ```sh
@@ -130,63 +135,84 @@ This is the primary command for creating a file from a template.
 
 ```bash
 # Using npx
-npx @aditsuru/readme-gen [source_options] [output_path]
+npx @aditsuru/readme-gen [base_source] [options]
 
 # Or globally installed
-readme-gen [source_options] [output_path]
+readme-gen [base_source] [options]
 ```
 
-**Source Options (Choose ONE method):**
+**Arguments & Options:**
 
-1.  **Built-in Default (No options):**
-    If you run the command with no source options (`-t`, `-c`, `-n`) and no base source argument, it uses the built-in default README template.
-    ```bash
-    readme-gen
-    readme-gen my-project/README.md # Generate to specific output
-    ```
-2.  **User-Set Default (No options):**
-    If you have set a default template using `readme-gen template default <name>`, running the command with no source options will use your saved default.
-    ```bash
-    readme-gen # Uses your default template
-    ```
-3.  **Base Source (Argument):**
-    Provide a path to a local directory or a public GitHub repository URL. The tool expects `readme-template.md` and `readme-config.json` files inside that source.
+- `[base_source]` (Optional Positional Argument):
+  - Path to a local directory or a public GitHub repository URL containing the template files.
+  - If provided, the tool expects `readme-template.md` and `readme-config.json` inside this source.
+- **Source Options (Choose ONE method if not using `[base_source]`):**
+  - `-t, --template <source>`: Path or URL to the template file (requires `-c`).
+  - `-c, --config <source>`: Path or URL to the config file (requires `-t`).
+  - `-n, --name <name>`: Use a saved template configuration by name (see Managing Templates).
+- **Output Option:**
+  - `-o, --output <path>`: Path to save the generated file.
+    - _Default:_ `./README.md` in the current working directory.
 
-    ```bash
-    # Local directory
-    readme-gen ./my-template-folder
-    readme-gen ./my-template-folder output.md
+**Source Priority & Examples:**
 
-    # GitHub Repo URL
-    readme-gen https://github.com/user/repo
-    readme-gen https://github.com/user/repo output.md
-    ```
+The tool determines which template/config to use based on this priority:
 
-4.  **Explicit Sources (Flags):**
-    Provide paths or URLs directly to the template and config files. **Both `-t` and `-c` are required together.**
+1.  **Explicit Sources (Flags):** `-t` and `-c` together. Highest priority.
 
     ```bash
-    # Local files
+    # Local files, default output path (./README.md)
     readme-gen -t ./path/to/template.md -c ./path/to/config.json
-    readme-gen -t tmpl.md -c conf.json output/README.md
 
-    # URLs
-    readme-gen -t <template_url> -c <config_url>
+    # URLs, specific output path
+    readme-gen -t <template_url> -c <config_url> -o docs/GENERATED.md
 
-    # Mixed
-    readme-gen -t ./local-template.md -c <config_url>
+    # Mixed, specific output path
+    readme-gen -t ./local-tmpl.md -c <config_url> -o my-output.txt
     ```
 
-5.  **Saved Name (Flag):**
-    Use a template configuration you previously saved with `readme-gen template add`.
+2.  **Saved Name (Flag):** `-n` flag.
+
     ```bash
-    readme-gen -n my-saved-template
-    readme-gen -n my-repo-template output/README.md
+    # Use saved config 'my-setup', output to specific path
+    readme-gen -n my-setup -o project/README.md
+
+    # Use saved config 'my-repo', default output path
+    readme-gen -n my-repo
     ```
 
-**Output Path:**
+3.  **Base Source (Argument):** Positional argument.
 
-- `[output_path]`: An optional final argument specifying where to save the generated file. Defaults to `./README.md` in the current directory.
+    ```bash
+    # Local directory, default output path
+    readme-gen ./my-template-folder
+
+    # GitHub Repo URL, specific output path
+    # (Expects https://raw.githubusercontent.com/user/repo/main/readme-template.md etc.)
+    readme-gen https://github.com/user/repo -o README_generated.md
+    ```
+
+4.  **User-Set Default:** If you've set a default using `template default`, and no source flags or arguments are given.
+
+    ```bash
+    # Uses your saved default template, outputs to ./README.md
+    readme-gen
+
+    # Uses your saved default template, outputs to specific path
+    readme-gen -o ../README.md
+    ```
+
+5.  **Built-in Default:** Lowest priority. Used if no other sources are specified and no user default is set.
+
+    ```bash
+    # Uses the built-in template, outputs to ./README.md
+    readme-gen
+
+    # Uses the built-in template, outputs to specific path
+    readme-gen -o my-project/README.md
+    ```
+
+**Conflicting Sources:** Providing more than one sourcing method (e.g., using `-n` and also providing a `[base_source]`) will result in an error.
 
 ### Managing Templates
 
@@ -201,31 +227,48 @@ readme-gen template <command> [args...]
 **Commands:**
 
 - **`add <name> <source...>`**
+
   - Saves a template configuration with a unique name.
   - Provide **one source** for 'base' type (local dir path or repo URL):
+
     ```bash
-    readme-gen template add my-base-local ./path/to/dir
-    readme-gen template add my-base-repo https://github.com/user/repo
+    # Save template from local directory
+    readme-gen template add my-local-base ./path/to/template_dir
+
+    # Save template from GitHub repo
+    readme-gen template add my-gh-repo https://github.com/user/repo
     ```
+
   - Provide **two sources** for 'explicit' type (template source and config source):
+
     ```bash
-    readme-gen template add my-explicit ./tmpl.md ./conf.json
-    readme-gen template add my-remote <tmpl_url> <conf_url>
+    # Save explicit local files
+    readme-gen template add my-explicit-files ./tmpl.md ./conf.json
+
+    # Save explicit remote URLs
+    readme-gen template add my-remote-files <tmpl_url> <conf_url>
     ```
+
+  - _Note:_ Local paths are saved as absolute paths. The first template added automatically becomes the default.
+
 - **`list` (alias `ls`)**
+
   - Shows all saved user templates and indicates the current default.
   - ```bash
     readme-gen template list
     ```
+
 - **`remove <name>` (alias `rm`)**
+
   - Deletes a saved template configuration.
   - ```bash
-    readme-gen template remove my-explicit
+    readme-gen template remove my-explicit-files
     ```
+
 - **`default <name>`**
-  - Sets a previously saved template as the default to be used when no other source is specified.
+  - Sets a previously saved template as the default to be used when no other source is specified during generation.
   - ```bash
-    readme-gen template default my-base-repo
+    readme-gen template default my-gh-repo
     ```
 
 ## Creating Custom Templates
@@ -235,9 +278,14 @@ To use your own templates, create two files:
 1.  **Template File (`.md` or any text format):**
 
     - This is your blueprint file (e.g., `readme-template.md`).
-    - Use placeholders in the format `${variableName}` where you want values inserted.
-    - The `variableName` must exactly match a `name` defined in your config file.
-    - **Example (`my-template.md`):**
+    - It can contain standard text and Markdown.
+    - Use placeholders for variable substitution and conditional blocks for optional content.
+
+    ### Variable Substitution
+
+    - Use the format `${variableName}` where you want values inserted.
+    - The `variableName` must exactly match a `name` defined in your config file's prompts.
+    - **Example:**
 
       ```markdown
       # ${projectName}
@@ -248,6 +296,35 @@ To use your own templates, create two files:
       Features: ${selectedFeatures}
       ```
 
+    ### Conditional Blocks (IF/ENDIF)
+
+    - Use HTML-style comments to wrap content that should only be included if a specific variable (typically from a `confirm` prompt) is `true`.
+    - **Syntax:**
+
+      ```markdown
+      <!-- IF:{booleanVariableName} -->
+
+      This content is only included if 'booleanVariableName' is true.
+      You can use other variables like ${projectName} inside here too.
+
+      <!-- ENDIF:{booleanVariableName} -->
+      ```
+
+    - **Behavior:**
+      - If `booleanVariableName` exists in the answers and is `true`, the `<!-- IF -->` and `<!-- ENDIF -->` tags are removed, and the content between them is kept.
+      - If `booleanVariableName` is `false`, or if it's not defined in the config, or if its value is not a boolean type, the _entire block_ (including the tags and the content inside) is removed.
+    - **Example:**
+
+      ```markdown
+      <!-- IF:{includeLicenseSection} -->
+
+      ## License
+
+      This project uses the ${chosenLicense} license.
+
+      <!-- ENDIF:{includeLicenseSection} -->
+      ```
+
 2.  **Configuration File (`.json`):**
     - This file defines the questions the CLI will ask (e.g., `readme-config.json`).
     - It MUST contain a root object with a single key: `"prompts"`.
@@ -256,7 +333,7 @@ To use your own templates, create two files:
       ```json
       {
       	"prompts": [
-      		// Prompt definitions go here...
+      		// Prompt definition objects go here...
       	]
       }
       ```
@@ -267,7 +344,7 @@ Each object inside the `"prompts"` array defines one question. It must have `nam
 
 - **Common Properties:**
 
-  - `name` (string, required): The variable name used in the template (e.g., `${projectName}`).
+  - `name` (string, required): The variable name used in the template (e.g., `${projectName}` or for `<!-- IF:{includeLicenseSection} -->`).
   - `type` (string, required): The type of prompt. See below.
   - `message` (string, required): The question text shown to the user.
   - `initialValue` (any, optional): A default value pre-filled or pre-selected.
@@ -290,15 +367,15 @@ Each object inside the `"prompts"` array defines one question. It must have `nam
         }
         ```
 
-  2.  **`confirm`:** For Yes/No questions. Returns `true` or `false`.
+  2.  **`confirm`:** For Yes/No questions. Returns `true` or `false`. Crucial for conditional blocks.
 
       - `initialValue` (boolean, optional): Default state (`true`=Yes, `false`=No). Defaults to `false`.
       - Example:
         ```json
         {
-        	"name": "includeTests",
+        	"name": "includeLicenseSection",
         	"type": "confirm",
-        	"message": "Include unit tests?",
+        	"message": "Include a license section in the README?",
         	"initialValue": true
         }
         ```
@@ -324,7 +401,7 @@ Each object inside the `"prompts"` array defines one question. It must have `nam
         }
         ```
 
-  4.  **`multiselect`:** For choosing multiple options from a list. Returns an array of the `value`s of chosen options.
+  4.  **`multiselect`:** For choosing multiple options from a list. Returns an array of the `value`s of chosen options. The `${variable}` in the template will be replaced by a comma-separated string of the selected values.
       - `options` (array, required): Same format as `select`.
       - `required` (boolean, optional): If true, user must select at least one option.
       - `initialValue` (array, optional): An array of `value`s to select by default.
@@ -348,11 +425,11 @@ Each object inside the `"prompts"` array defines one question. It must have `nam
 
 Contributions are welcome! Please fork the repository and create a pull request or open an issue.
 
-1. Fork the Project (`https://github.com/aditsuru-git/readme-gen/fork`)
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+1.  Fork the Project (`https://github.com/aditsuru-git/readme-gen/fork`)
+2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4.  Push to the Branch (`git push origin feature/AmazingFeature`)
+5.  Open a Pull Request
 
 <!-- LICENSE -->
 
