@@ -1,6 +1,6 @@
 {
 	"name": "@aditsuru/readme-gen",
-	"version": "3.2.0",
+	"version": "3.2.1",
 	"description": "A command line tool to generate README files based on templates",
 	"main": "src/generator.js",
 	"bin": {
@@ -16,6 +16,13 @@
 		"template",
 		"markdown",
 		"documentation"
+	],
+	"files": [
+		"bin/",
+		"src/",
+		"templates/",
+		"LICENSE",
+		"README.md"
 	],
 	"author": "aditsuru",
 	"license": "MIT",
