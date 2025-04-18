@@ -19,10 +19,13 @@ function escapeRegExp(str) {
  * @param {string} templateContent - The raw template content as a string.
  * @param {object} answers - An object where keys are placeholder names
  *                           and values are the user-provided answers.
+ * @param {Array<object>} promptsConfig - The array of prompt configuration objects.
  * @returns {string} - The processed template content.
- * @throws {TypeError} If templateContent is not a string or answers is not an object.
+ * @throws {TypeError} If templateContent is not a string, answers is not an object,
+ *                     or promptsConfig is not an array.
  */
-function generateContent(templateContent, answers) {
+// Added promptsConfig parameter
+function generateContent(templateContent, answers, promptsConfig) {
 	// Basic type checking for robustness
 	if (typeof templateContent !== "string") {
 		throw new TypeError("Internal Error: templateContent must be a string.");
@@ -30,27 +33,58 @@ function generateContent(templateContent, answers) {
 	if (typeof answers !== "object" || answers === null) {
 		throw new TypeError("Internal Error: answers must be an object.");
 	}
+	// Added check for promptsConfig
+	if (!Array.isArray(promptsConfig)) {
+		// Provide a fallback or throw an error if promptsConfig isn't passed correctly
+		// For now, let's log a warning and proceed with default behavior if possible
+		console.warn(
+			"Internal Warning: promptsConfig was not provided to generateContent. Multiselect separators will use default."
+		);
+		promptsConfig = []; // Use an empty array to avoid errors below, but separators won't work
+	}
 
 	// --- Pass 1: Replace standard ${variable} placeholders ---
 	let processedContent = templateContent;
-	for (const [key, value] of Object.entries(answers)) {
-		// Escape key in case it has special regex characters (unlikely but safe)
-		const placeholder = new RegExp(`\\$\\{${escapeRegExp(key)}\\}`, "g");
+	// Create a map of prompt names to their configs for easier lookup
+	const configMap = promptsConfig.reduce((map, prompt) => {
+		map[prompt.name] = prompt;
+		return map;
+	}, {});
 
+	// Iterate through the answers provided by the user
+	for (const [key, value] of Object.entries(answers)) {
+		// Find the corresponding config for this answer key
+		const promptConfig = configMap[key];
+
+		// Determine replacement value based on type and config
 		let replacementValue;
+
+		// Check if it's an array (likely from multiselect)
 		if (Array.isArray(value)) {
-			replacementValue = value.length > 0 ? value.join(", ") : "";
+			// Default separator
+			let separator = ", ";
+			// If we found config and it specified a multiselect separator, use it
+			if (promptConfig && promptConfig.type === "multiselect" && typeof promptConfig.separator === "string") {
+				separator = promptConfig.separator;
+			}
+			// Join the array elements
+			replacementValue = value.length > 0 ? value.join(separator) : "";
 		} else if (typeof value === "boolean") {
 			replacementValue = value ? "true" : "false";
 		} else {
+			// Handle null/undefined and other types
 			replacementValue = value ?? "";
 		}
+
+		// Escape key for regex and create placeholder regex
+		const placeholder = new RegExp(`\\$\\{${escapeRegExp(key)}\\}`, "g");
+		// Perform the replacement
 		processedContent = processedContent.replace(placeholder, String(replacementValue));
 	}
 
 	// --- Pass 2: Process conditional <!-- IF:{var} --> blocks ---
+	// This part remains unchanged as it only depends on 'answers'
 
-	// Find all unique variable names used in IF blocks
 	const ifVarRegex = /<!--\s*IF:\{([^}]+)\}\s*-->/g;
 	const conditionalVariables = new Set();
 	let match;
@@ -69,7 +103,6 @@ function generateContent(templateContent, answers) {
 				: false;
 
 		// Create the regex for this specific variable's block
-		// Need 's' flag (dotAll) so '.' matches newlines within the block
 		const blockRegex = new RegExp(
 			`<!--\\s*IF:\\{${escapeRegExp(variableName)}\\}\\s*-->(.*?)<!--\\s*ENDIF:\\{${escapeRegExp(
 				variableName
@@ -93,12 +126,7 @@ function generateContent(templateContent, answers) {
 /**
  * Asynchronously writes the provided content to the specified output file path.
  * Creates the necessary directories if they don't exist.
- *
- * @param {string} outputPath - The absolute path where the file should be written.
- * @param {string} content - The string content to write to the file.
- * @returns {Promise<void>} A promise that resolves when writing is complete.
- * @throws {Error} If writing fails (e.g., permission errors, invalid path), wrapping the original error.
- * @throws {TypeError} If content is not a string.
+ * (Function remains unchanged)
  */
 async function writeFile(outputPath, content) {
 	if (typeof content !== "string") {

@@ -16,7 +16,7 @@
     <img src="https://raw.githubusercontent.com/aditsuru-git/readme-gen/main/assets/icon.png" alt="Logo" width="80" height="80">
     <h3 align="center">README Generator (@aditsuru/readme-gen)</h3>
     <p align="center">
-      Generate project READMEs (or other files!) quickly from custom templates using an interactive CLI. Supports variable substitution, conditional content blocks, and follow-up questions.
+      Generate project READMEs (or other files!) quickly from custom templates using an interactive CLI. Supports variable substitution, conditional content blocks, follow-up questions, and custom multi-select separators.
       <br />
       <!-- <a href="https://github.com/aditsuru-git/readme-gen/docs"><strong>Explore the docs »</strong></a> -->
       <!-- <br /> -->
@@ -64,10 +64,10 @@
             </li>
             <li><a href="#configuration-file-json">Configuration File (.json)</a>
                 <ul>
-                    <li><a href="#follow-up-questions-dependsOnshowIf">Follow-up Questions (dependsOn/showIf)</a></li>
+                    <li><a href="#follow-up-questions-dependsonshowif">Follow-up Questions (dependsOn/showIf)</a></li>
                 </ul>
             </li>
-            <li><a href="#prompt-types">Prompt Types & Options</a></li>
+            <li><a href="#prompt-types--options">Prompt Types & Options</a></li>
         </ul>
     </li>
     <li><a href="#contributing">Contributing</a></li>
@@ -84,7 +84,7 @@
   <img src="https://raw.githubusercontent.com/aditsuru-git/readme-gen/main/assets/screenshot.png" alt="CLI Screenshot" width="100%" style="max-width: 800px;">
 </div>
 
-`@aditsuru/readme-gen` is a command-line tool designed to streamline the creation of README files (or any text-based boilerplate) for your projects. It works by processing a template file (`.md`) and interactively asking you questions defined in a corresponding configuration file (`.json`). Your answers are then injected into the template, conditional blocks are processed, and follow-up questions can be asked based on previous answers, to produce the final output file.
+`@aditsuru/readme-gen` is a command-line tool designed to streamline the creation of README files (or any text-based boilerplate) for your projects. It works by processing a template file (`.md`) and interactively asking you questions defined in a corresponding configuration file (`.json`). Your answers are then injected into the template, conditional blocks are processed, follow-up questions can be asked based on previous answers, and multi-select answers can be joined with custom separators, to produce the final output file.
 
 It supports using local template files, fetching templates from public GitHub repositories, saving configurations for quick reuse, and comes with a built-in default README template.
 
@@ -262,10 +262,6 @@ readme-gen template <command> [args...]
     readme-gen template list
     ```
 
-  ```
-
-  ```
-
 - **`remove <name>` (alias `rm`)**
 
   - Deletes a saved template configuration.
@@ -273,18 +269,11 @@ readme-gen template <command> [args...]
     readme-gen template remove my-explicit-files
     ```
 
-  ```
-
-  ```
-
 - **`default <name>`**
   - Sets a previously saved template as the default to be used when no other source is specified during generation.
   - ```bash
     readme-gen template default my-gh-repo
     ```
-  ```
-
-  ```
 
 ## Creating Custom Templates
 
@@ -300,6 +289,7 @@ To use your own templates, create two files:
 
     - Use the format `${variableName}` where you want values inserted.
     - The `variableName` must exactly match a `name` defined in your config file's prompts.
+    - For `multiselect` answers, the values will be joined by `, ` by default, or by the custom `separator` if defined in the config.
     - **Example:**
 
       ```markdown
@@ -309,12 +299,19 @@ To use your own templates, create two files:
       License: ${chosenLicense}
       Includes Tests: ${includeTests}
       Features: ${selectedFeatures}
+
+      <!-- selectedFeatures might become "lint, format, testing" -->
+
+      Tags: ${selectedTags}
+
+      <!-- selectedTags might become "#tag1\n#tag2" if separator is "\n" -->
       ```
 
     ### Conditional Blocks (IF/ENDIF)
 
     - Use HTML-style comments to wrap content that should only be included if a specific variable (typically from a `confirm` prompt) is `true`.
     - **Syntax:**
+
       ```markdown
       <!-- IF:{booleanVariableName} -->
 
@@ -323,10 +320,12 @@ To use your own templates, create two files:
 
       <!-- ENDIF:{booleanVariableName} -->
       ```
+
     - **Behavior:**
       - If `booleanVariableName` exists in the answers and is `true`, the `<!-- IF -->` and `<!-- ENDIF -->` tags are removed, and the content between them is kept.
       - If `booleanVariableName` is `false`, or if it's not defined in the config, or if its value is not a boolean type, the _entire block_ (including the tags and the content inside) is removed.
     - **Example:**
+
       ```markdown
       <!-- IF:{includeLicenseSection} -->
 
@@ -352,6 +351,7 @@ To use your own templates, create two files:
     - If the condition is not met (parent prompt wasn't answered or the answer doesn't match `showIf`), the follow-up prompt is skipped entirely.
 
     - **Example (`my-config.json`):**
+
       ```json
       {
       	"prompts": [
@@ -391,7 +391,7 @@ To use your own templates, create two files:
 
 ### Prompt Types & Options
 
-Each object inside the `"prompts"` array defines one question. Besides the optional `dependsOn` and `showIf` described above, it must have `name`, `type`, and `message`. Other properties are optional depending on the type.
+Each object inside the `"prompts"` array defines one question. Besides the optional `dependsOn` and `showIf`, it must have `name`, `type`, and `message`. Other properties are optional depending on the type.
 
 - **Common Properties:**
 
@@ -410,6 +410,7 @@ Each object inside the `"prompts"` array defines one question. Besides the optio
       - `placeholder` (string, optional): Dimmed text shown when the input is empty.
       - `required` (boolean, optional): If true, user cannot submit an empty value.
       - Example:
+
         ```json
         {
         	"name": "projectName",
@@ -424,6 +425,7 @@ Each object inside the `"prompts"` array defines one question. Besides the optio
 
       - `initialValue` (boolean, optional): Default state (`true`=Yes, `false`=No). Defaults to `false`.
       - Example:
+
         ```json
         {
         	"name": "includeLicenseSection",
@@ -440,6 +442,7 @@ Each object inside the `"prompts"` array defines one question. Besides the optio
         - An array of objects: `[{ "value": "mit", "label": "MIT License", "hint": "Permissive" }, ...]`
       - `initialValue` (any, optional): The `value` of the option to select by default.
       - Example:
+
         ```json
         {
         	"name": "chosenLicense",
@@ -454,23 +457,31 @@ Each object inside the `"prompts"` array defines one question. Besides the optio
         }
         ```
 
-  4.  **`multiselect`:** For choosing multiple options from a list. Returns an array of the `value`s of chosen options. The `${variable}` in the template will be replaced by a comma-separated string of the selected values. _Cannot_ be directly used as a parent for follow-up questions using `showIf` (as the answer is an array, not a simple value).
+  4.  **`multiselect`:** For choosing multiple options from a list. Returns an array of the `value`s of chosen options.
+
       - `options` (array, required): Same format as `select`.
       - `required` (boolean, optional): If true, user must select at least one option.
       - `initialValue` (array, optional): An array of `value`s to select by default.
+      - `separator` (string, optional): The string used to join the selected values when replacing the corresponding `${variable}` placeholder in the template. Defaults to `", "`.
       - Example:
+
+        ```json
+        {
+        	"name": "selectedTags",
+        	"type": "multiselect",
+        	"message": "Select tags:",
+        	"options": ["#tag1", "#tag2", "#tag3"],
+        	"separator": "\n" // Join tags with newlines in the output
+        }
+        ```
+
         ```json
         {
         	"name": "selectedFeatures",
         	"type": "multiselect",
-        	"message": "Select features to include:",
-        	"required": false,
-        	"options": [
-        		{ "value": "lint", "label": "ESLint" },
-        		{ "value": "format", "label": "Prettier" },
-        		"TypeScript",
-        		"Testing"
-        	]
+        	"message": "Select features:",
+        	"options": ["Linting", "Formatting", "Testing"]
+        	// No separator: defaults to ", " => "Linting, Formatting, Testing"
         }
         ```
 
@@ -534,12 +545,4 @@ Distributed under the MIT License. See `LICENSE` file for more information.
 [Clack-url]: https://github.com/natemoo-re/clack
 [Commander-badge]: https://img.shields.io/badge/Commander.js-000000?style=for-the-badge&logo=javascript&logoColor=white
 [Commander-url]: https://github.com/tj/commander.js/
-[Conf-badge]: https://img.shields.io/badge/Conf-4D4D4D?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDI1NiAyNTYiPjxwYXRoIGQ9Ik0yMDkuMiwxMjIuNmgtMzEuMmMwLDE3LjMtMTMuOSwzMS4zLTMxLjIsMzEuM2MtMTcuMywwLTMxLjItMTMuOS0zMS4yLTMxLjJoMzEuMkMyMDkuMSwxMjIuNiwyMDkuMiwxMjIuNiwyMDkuMiwxMjIuNnoiIGZpbGw9IiNGRkYiLz48cGF0aCBkPSJNMjI0LjUsNTguN0wyMjQuNSw1OC43TDIyNC41LDU4LjdjLTMuMy00LjktOS03LjYtMTUuMS03LjZoLTE4LjljLTYuMSwwLjEtMTEuOCwyLjgtMTUuMSw3LjZoMC40aC0wLjRoMC43YzMuMyw0LjksOSw3LjcsMTUuMSw3LjZoMTguN0MyMTUuNSw2Ni4zLDIyMS4xLDYzLjYsMjI0LjUsNTguN3oiIGZpbGw9IiNGRkYiLz48cGF0aCBkPSJNNTguNCw0NS4yYzMuMy00LjksOS03LjYsMTUuMS03LjZoMTguOWM2LjEtMC4xLDExLjgsMi44LDE1uMSw3LjZoLTAuNGgwLjRoLTAuN2MtMy4zLDQuOS05LDcuNy0xNS4xLDcuNkg3My41QzY3LjQsNTIuOSw2MS44LDUwLjIsNTguNCw0NS4yeiIgZmlsbD0iI0ZGRiIvPjxwYXRoIGQ9Ik0xMjgsMjMxLjNjLTEwLjgsMC0yMS4xLTEuOC0zMC42LTUuNGMtMy43LTEuNC01LjMtNS45LTMuOS05LjZsMCwwYzEuNC0zLjcsNS45LTUuMyw5LjYtMy45YzcuNywzLDE2LjEsNC43LDI0LjksNC43czE3LjItMS42LDI0LjktNC43YzMuNy0xLjQsNy44LDAuMSw5LjEsMy44bDAsMGMxLjQsMy43LTAuMSw3LjgtMy44LDkuMUMxNDkuMSwyMjkuNSwxMzguOCwyMzEuMywxMjgsMjMxLjN6IiBmaWxsPSIjRkZGIi8+PHBhdGggZD0iTTQ2LjgsMTIyLjZoMzEuMmMwLDAsMCwwLDAsMEM0Ni44LDEyMi42LDQ2LjgsMTIyLjYsNDYuOCwxMjIuNnoiIGZpbGw9IiNGRkYiLz48cGF0aCBkPSJNMjI0LjYsMTk3LjRsLTAuNCwwYzMuMyw0LjksOSw3LjcsMTUuMSw3LjZoMTguOWM2LDAsMTEuNS0yLjcsMTQuOC03LjZoMC43bC0wLjQtMC4xYy0zLjQtNC44LTktNy41LTE1LjEtNy41aC0xOC43QzIxNS42LDE4OS44LDIyMS4yLDE5Mi41LDIyNC42LDE5Ny40eiIgZmlsbD0iI0ZGRiIvPjxwYXRoIGQ9Ik01OC43LDIwNC45aC0wLjdoMC40Yy0zLjMsNC44LTkuMSw3LjUtMTUuMyw3LjVIMjQuNWMtNiwwLTExLjYtMi43LTE0LjgtNy42aDAuNGwtMC43LTAuMWMzLjMtNC45LDktNy42LDE1LjEtNy42aDE4LjlDNzMuOCwxODkuOCw2MS44LDE5My44LDU4LjcsMjA0Ljl6IiBmaWxsPSIjRkZGIi8+PHBhdGggZD0iTTExMC43LDIwNC45YzUuNSwwLjMsMTEuMSwwLjMsMTYuNiwwbDQuOS0xMC41YzAuMy0wLjYsMC45LTEsMS41LTFsMTEuNSwwYzAuOSwwLDEuNi0wLjgsMS41LTEuN2wwLjEtNC4zYzAtMC4yLTAuMS0wLjUtMC4yLTAuNkwxNDEsMTc3LjhjLTAuMy0wLjUtMC45LTEuMS0xLjYtMS4xSDExMS45Yy0wLjYsMC0xLjIsMC41LTEuNSwxLjFMOTcsMTg2LjRjLTAuMSwwLjItMC4yLDAuNS0wLjIsMC43djQuM2MwLDAuOSwwLjcsMS43LDEuNiwxLjdsMTEuNSwwYzAuNiwwLDEuMSwwLjUtMS40LDEuMUwxMTAuNywyMDQuOXoiIGZpbGw9IiNGRkYiLz48cGF0aCBkPSJNMTE4LjIsNjYuM2g3LjljMCwwLDAsMCwwLDBDMTE4LjIsNjYuMywxMTguMiw2Ni4zLDExOC4yLDY2LjN6IiBmaWxsPSIjRkZGIi8+PHBhdGggZD0iTTMwLjgsMTU2LjdjLTEwLjgsMC0yMS4xLTEuOC0zMC42LTUuNGMtMy43LTEuNC01LjMtNS45LTMuOS05LjZsMCwwYzEuNC0zLjcsNS45LTUuMyw5LjYtMy45YzcuNywzLDE2LjEsNC43LDI0LjksNC43czE3LjItMS42LDI0LjktNC43YzMuNy0xLjQsNy44LDAuMSw5LjEsMy44bDAsMGMxLjQsMy43LTAuMSw3LjgtMy44LDkuMUM1MS45LDE1NC45LDQxLjYsMTU2LjcsMzAuOCwxNTYuN3oiIGZpbGw9IiNGRkYiLz48cGF0aCBkPSJNNDYuOCwxMjIuNmgtMzEuMmMwLTE3LjMsMTMuOS0zMS4zLDMxLjItMzEuM0M2NC4xLDkxLjMsNzgsMTA1LjIsNzgsMTIyLjZoLTMxLjJDNDYuOSwxMjIuNiw0Ni44LDEyMi42LDQ2LjgsMTIyLjZ6IiBmaWxsPSIjRkZGIi8+PC9zdmc+
-[Conf-url]: https://github.com/sindresorhus/conf
-[Picocolors-badge]: https://img.shields.io/badge/picocolors-000000?style=for-the-badge&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAANCAYAAACZWDV/AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAABSSURBVHgBbY9BDsAgCAO/+x/KM69QCH5pIUoTFK2wGWw6x29nZzycgH8aBDII4x7Rk+uBY7Z45e+GfEhlB+0k9G8sB/uU8jAxBN1/g9h0rp+A+AEgKQAAAABJRU5ErkJggg==
-[Picocolors-url]: https://github.com/alexeyraspopov/picocolors
-
-<!-- TECH STACK BADGE (Replace with actual if needed) -->
-
-[Tech-badge]: https://img.shields.io/badge/Built%20with-Node.js-blue?style=for-the-badge&logo=node.js
-[Tech-url]: https://nodejs.org
+[Conf-badge]: https://img.shields.io/badge/Conf-4D4D4D?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDI1NiAyNTYiPjxwYXRoIGQ9Ik0yMDkuMiwxMjIuNmgtMzEuMmMwLDE3LjMtMTMuOSwzMS4zLTMxLjIsMzEuM2MtMTcuMywwLTMxLjItMTMuOS0zMS4yLTMxLjJoMzEuMkMyMDkuMSwxMjIuNiwyMDkuMiwxMjIuNiwyMDkuMiwxMjIuNnoiIGZpbGw9IiNGRkYiLz48cGF0aCBkPSJNMjI0LjUsNTguN0wyMjQuNSw1OC43TDIyNC41LDU4LjdjLTMuMy00LjktOS03LjYtMTUuMS03LjZoLTE4LjljLTYuMSwwLjEtMTEuOCwyLjgtMTUuMSw3LjZoMC40aC0wLjRoMC43YzMuMyw0LjksOSw3LjcsMTUuMSw3LjZoMTguN0MyMTUuNSw2Ni4zLDIyMS4xLDYzLjYsMjI0LjUsNTguN3oiIGZpbGw9IiNGRkYiLz48cGF0aCBkPSJNNTguNCw0NS4yYzMuMy00LjksOS03LjYsMTUuMS03LjZoMTguOWM2LjEtMC4xLDExLjgsMi44LDE1uMSw3LjZoLTAuNGgwLjRoLTAuN2MtMy4zLDQuOS05LDcuNy0xNS4xLDcuNkg3My41QzY3LjQsNTIuOSw2MS44LDUwLjIsNTguNCw0NS4yeiIgZmlsbD0iI0ZGRiIvPjxwYXRoIGQ9Ik0xMjgsMjMxLjNjLTEwLjgsMC0yMS4xLTEuOC0zMC42LTUuNGMtMy43LTEuNC01LjMtNS45LTMuOS05LjZsMCwwYzEuNC0zLjcsNS45LTUuMyw5LjYtMy45YzcuNywzLDE2LjEsNC43LDI0LjksNC43czE3LjItMS42LDI0LjktNC43YzMuNy0xLjQsNy44LDAuMSw5LjEsMy44bDAsMGMxLjQsMy43LTAuMSw3LjgtMy44LDkuMUMxNDkuMSwyMjkuNSwxMzguOCwyMzEuMywxMjgsMjMxLjN6IiBmaWxsPSIjRkZGIi8+PHBhdGggZD0iTTQ2LjgsMTIyLjZoMzEuMmMwLDAsMCwwLDAsMEM0Ni44LDEyMi42LDQ2LjgsMTIyLjYsNDYuOCwxMjIuNnoiIGZpbGw9IiNGRkYiLz48cGF0aCBkPSJNMjI0LjYsMTk3LjRsLTAuNCwwYzMuMyw0LjksOSw3LjcsMTUuMSw3LjZoMTguOWM2LDAsMTEuNS0yLjcsMTQuOC03LjZoMC43bC0wLjQtMC4xYy0zLjQtNC44LTktNy41LTE1LjEtNy41aC0xOC43QzIxNS42LDE4OS44LDIyMS4yLDE5Mi41LDIyNC42LDE5Ny40eiIgZmlsbD0iI0ZGRiIvPjxwYXRoIGQ9Ik01OC43LDIwNC45aC0wLjdoMC40Yy0zLjMsNC44LTkuMSw3LjUtMTUuMyw3LjVIMjQuNWMtNiwwLTExLjYtMi43LTE0LjgtNy42aDAuNGwtMC43LTAuMWMzLjMtNC45LDktNy42LDE1LjEtNy42aDE4LjlDNzMuOCwxODkuOCw2MS44LDE5My44LDU4LjcsMjA0Ljl6IiBmaWxsPSIjRkZGIi8+PHBhdGggZD0iTTExMC43LDIwNC45YzUuNSwwLjMsMTEuMSwwLjMsMTYuNiwwbDQuOS0xMC41YzAuMy0wLjYsMC45LTEsMS41LTFsMTEuNSwwYzAuOSwwLDEuNi0wLjgsMS41LTEuN2wwLjEtNC4zYzAtMC4yLTAuMS0wLjUtMC4yLTAuNkwxNDEsMTc3LjhjLTAuMy0wLjUtMC45LTEuMS0xLjYtMS4xSDExMS45Yy0wLjYsMC0xLjIsMC41LTEuNSwxLjFMOTcsMTg2LjRjLTAuMSwwLjItMC4yLDAuNS0wLjIsMC43djQuM2MwLDAuOSwwLjcsMS43LDEuNiwxLjdsMTEuNSwwYzAuNiwwLDEuMSwwLjUtMS40LDEuMUwxMTAuNywyMDQuOXoiIGZpbGw9IiNGRkYiLz48cGF0aCBkPSJNMTE4LjIsNjYuM2g3LjljMCwwLDAsMCwwLDBDMTE4LjIsNjYuMywxMTguMiw2Ni4zLDExOC4yLDY2LjN6IiBmaWxsPSIjRkZGIi8+PHBhdGggZD0iTTMwLjgsMTU2LjdjLTEwLjgsMC0yMS4xLTEuOC0zMC42LTUuNGMtMy43LTEuNC01LjMtNS45LTMuOS05LjZsMCwwYzEuNC0zLjcsNS45LTUuMyw5LjYtMy45YzcuNywzLDE2LjEsNC43LDI0LjksNC43czE3LjItMS42LDI0LjktNC43YzMuNy0xLjQsNy44LDAuMSw5LjEsMy44bDAsMGMxLjQsMy43LTAuMSw3LjgtMy44LDkuMUM1MS45LDE1NC45LDQxLjYsMTU2LjcsMzAuOCwxNTYuN3oiIGZpbGw=```

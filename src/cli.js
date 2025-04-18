@@ -249,7 +249,7 @@ async function runCli(templateSourceOpt, configSourceOpt, namedTemplateOpt, base
 
 		// --- 3. Generate Final Content ---
 		// Call the synchronous generator function from generator.js
-		const generatedOutput = generateContent(templateContent, answers);
+		const generatedOutput = generateContent(templateContent, answers, config.prompts);
 
 		// --- 4. Write Output File ---
 		// Get relative path for clearer user message

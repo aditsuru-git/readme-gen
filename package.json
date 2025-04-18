@@ -1,6 +1,6 @@
 {
 	"name": "@aditsuru/readme-gen",
-	"version": "3.2.1",
+	"version": "3.3.0",
 	"description": "A command line tool to generate README files based on templates",
 	"main": "src/generator.js",
 	"bin": {

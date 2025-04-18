@@ -3,51 +3,41 @@
 		{
 			"name": "projectName",
 			"type": "text",
-			"message": "Enter the Project Name:",
-			"placeholder": "My Awesome Project",
-			"required": true
+			"message": "Project Name:",
+			"required": true,
+			"placeholder": "My Awesome Project"
 		},
 		{
 			"name": "projectDescription",
 			"type": "text",
-			"message": "Enter a brief Project Description:",
-			"placeholder": "A short description of what this project does.",
+			"message": "Short project description (one line):",
 			"required": true
 		},
 		{
-			"name": "githubUsername",
+			"name": "repoOwner",
 			"type": "text",
-			"message": "Enter your GitHub Username:",
-			"placeholder": "github_username",
-			"required": true
+			"message": "GitHub username / organization name:",
+			"required": true,
+			"placeholder": "e.g., octocat"
 		},
 		{
 			"name": "repoName",
 			"type": "text",
-			"message": "Enter the GitHub Repository Name:",
-			"placeholder": "repo-name",
-			"required": true
+			"message": "GitHub repository name:",
+			"required": true,
+			"placeholder": "e.g., my-awesome-project"
 		},
 		{
 			"name": "authorName",
 			"type": "text",
-			"message": "Author Name (optional):",
-			"placeholder": "Your Name",
-			"required": false
+			"message": "Author's name:",
+			"required": true
 		},
 		{
-			"name": "authorTwitter",
+			"name": "contactInfo",
 			"type": "text",
-			"message": "Author Twitter Handle (optional, without @):",
-			"placeholder": "your_twitter",
-			"required": false
-		},
-		{
-			"name": "authorEmail",
-			"type": "text",
-			"message": "Author Email (optional):",
-			"placeholder": "your.email@example.com",
-			"required": false
+			"message": "Contact Information (email, twitter, etc.):",
+			"placeholder": "Optional, but recommended"
 		},
 		{
 			"name": "includeLicense",
@@ -60,158 +50,49 @@
 			"type": "select",
 			"message": "Choose a license:",
 			"initialValue": "MIT",
-			"options": [
-				{ "value": "MIT", "label": "MIT License" },
-				{ "value": "Apache 2.0", "label": "Apache License 2.0" },
-				{ "value": "GPLv3", "label": "GNU GPL v3" },
-				{ "value": "BSD 3-Clause", "label": "BSD 3-Clause License" },
-				"Unlicensed"
-			],
+			"options": ["MIT", "Apache 2.0", "GPL v3", "BSD 3-Clause", "Unlicense", "Other"],
 			"dependsOn": "includeLicense",
 			"showIf": true
 		},
 		{
-			"name": "addTechBadges",
+			"name": "includeBuiltWith",
 			"type": "confirm",
-			"message": "Add 'Built With' technology badges?",
+			"message": "Include 'Built With' section?",
 			"initialValue": true
 		},
-
 		{
-			"name": "techNode",
-			"type": "confirm",
-			"message": "Built with Node.js?",
-			"initialValue": false,
-			"dependsOn": "addTechBadges",
-			"showIf": true
+			"name": "builtWithBadges",
+			"type": "multiselect",
+			"message": "Select primary technologies used (will be formatted as badges):",
+			"dependsOn": "includeBuiltWith",
+			"showIf": true,
+			"options": [
+				{ "value": "[![JavaScript][JavaScript-badge]][JavaScript-url]", "label": "JavaScript" },
+				{ "value": "[![TypeScript][TypeScript-badge]][TypeScript-url]", "label": "TypeScript" },
+				{ "value": "[![Python][Python-badge]][Python-url]", "label": "Python" },
+				{ "value": "[![React][React-badge]][React-url]", "label": "React" },
+				{ "value": "[![Vue.js][Vue-badge]][Vue-url]", "label": "Vue.js" },
+				{ "value": "[![Angular][Angular-badge]][Angular-url]", "label": "Angular" },
+				{ "value": "[![Node.js][Node-badge]][Node-url]", "label": "Node.js" },
+				{ "value": "[![Java][Java-badge]][Java-url]", "label": "Java" },
+				{ "value": "[![Go][Go-badge]][Go-url]", "label": "Go" },
+				{ "value": "[![Rust][Rust-badge]][Rust-url]", "label": "Rust" },
+				{ "value": "[![Docker][Docker-badge]][Docker-url]", "label": "Docker" },
+				{ "value": "[![AWS][AWS-badge]][AWS-url]", "label": "AWS" },
+				{ "value": "[![Firebase][Firebase-badge]][Firebase-url]", "label": "Firebase" },
+				{ "value": "[![MongoDB][MongoDB-badge]][MongoDB-url]", "label": "MongoDB" },
+				{ "value": "[![PostgreSQL][PostgreSQL-badge]][PostgreSQL-url]", "label": "PostgreSQL" },
+				{ "value": "[![MySQL][MySQL-badge]][MySQL-url]", "label": "MySQL" }
+			],
+			"required": false,
+			"initialValue": [],
+			"separator": "\n"
 		},
 		{
-			"name": "techJS",
+			"name": "includeAcknowledgments",
 			"type": "confirm",
-			"message": "Built with JavaScript?",
-			"initialValue": false,
-			"dependsOn": "addTechBadges",
-			"showIf": true
-		},
-		{
-			"name": "techTS",
-			"type": "confirm",
-			"message": "Built with TypeScript?",
-			"initialValue": false,
-			"dependsOn": "addTechBadges",
-			"showIf": true
-		},
-		{
-			"name": "techPython",
-			"type": "confirm",
-			"message": "Built with Python?",
-			"initialValue": false,
-			"dependsOn": "addTechBadges",
-			"showIf": true
-		},
-		{
-			"name": "techJava",
-			"type": "confirm",
-			"message": "Built with Java?",
-			"initialValue": false,
-			"dependsOn": "addTechBadges",
-			"showIf": true
-		},
-		{
-			"name": "techGo",
-			"type": "confirm",
-			"message": "Built with Go?",
-			"initialValue": false,
-			"dependsOn": "addTechBadges",
-			"showIf": true
-		},
-		{
-			"name": "techRust",
-			"type": "confirm",
-			"message": "Built with Rust?",
-			"initialValue": false,
-			"dependsOn": "addTechBadges",
-			"showIf": true
-		},
-		{
-			"name": "techCpp",
-			"type": "confirm",
-			"message": "Built with C++?",
-			"initialValue": false,
-			"dependsOn": "addTechBadges",
-			"showIf": true
-		},
-		{
-			"name": "techCsharp",
-			"type": "confirm",
-			"message": "Built with C#?",
-			"initialValue": false,
-			"dependsOn": "addTechBadges",
-			"showIf": true
-		},
-		{
-			"name": "techReact",
-			"type": "confirm",
-			"message": "Built with React?",
-			"initialValue": false,
-			"dependsOn": "addTechBadges",
-			"showIf": true
-		},
-		{
-			"name": "techVue",
-			"type": "confirm",
-			"message": "Built with Vue.js?",
-			"initialValue": false,
-			"dependsOn": "addTechBadges",
-			"showIf": true
-		},
-		{
-			"name": "techAngular",
-			"type": "confirm",
-			"message": "Built with Angular?",
-			"initialValue": false,
-			"dependsOn": "addTechBadges",
-			"showIf": true
-		},
-		{
-			"name": "techSvelte",
-			"type": "confirm",
-			"message": "Built with Svelte?",
-			"initialValue": false,
-			"dependsOn": "addTechBadges",
-			"showIf": true
-		},
-		{
-			"name": "techDocker",
-			"type": "confirm",
-			"message": "Uses Docker?",
-			"initialValue": false,
-			"dependsOn": "addTechBadges",
-			"showIf": true
-		},
-		{
-			"name": "techAWS",
-			"type": "confirm",
-			"message": "Uses AWS?",
-			"initialValue": false,
-			"dependsOn": "addTechBadges",
-			"showIf": true
-		},
-		{
-			"name": "techGCP",
-			"type": "confirm",
-			"message": "Uses GCP?",
-			"initialValue": false,
-			"dependsOn": "addTechBadges",
-			"showIf": true
-		},
-		{
-			"name": "techAzure",
-			"type": "confirm",
-			"message": "Uses Azure?",
-			"initialValue": false,
-			"dependsOn": "addTechBadges",
-			"showIf": true
+			"message": "Include an Acknowledgments section placeholder?",
+			"initialValue": false
 		}
 	]
 }
