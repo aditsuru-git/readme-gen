@@ -139,33 +139,37 @@ function resolveFromBaseSource(baseSource) {
  * @param {string} packageName - The name of the package on npm.
  * @returns {Promise<void>}
  */
-async function checkForUpdates(currentVersion, packageName) {
-	if (!packageName || !currentVersion) {
-		// Don't check if info is missing
-		return;
-	}
+export async function checkForUpdates(currentVersion, packageName) {
 	try {
-		// Fetch the latest version number from npm registry
-		const latest = await latestVersion(packageName);
+		// Fetch the latest version from npm
+		const response = await fetch(`https://registry.npmjs.org/${packageName}/latest`);
+		const data = await response.json();
+		const latestVersion = data.version;
 
-		// Compare versions using semantic versioning rules
-		if (semver.gt(latest, currentVersion)) {
-			// Use console.warn for update notifications
-			console.warn(colors.yellow(`\n┌───────────────────────────────────────────────────────────┐`));
-			console.warn(
-				colors.yellow(
-					`│ Update available! ${colors.dim(currentVersion)} → ${colors.green(latest)}                      │`
-				)
-			);
-			console.warn(colors.yellow(`│ Run ${colors.cyan(`npm install -g ${packageName}`)} to update │`));
-			console.warn(colors.yellow(`└───────────────────────────────────────────────────────────┘\n`));
+		// Compare versions
+		if (currentVersion !== latestVersion) {
+			// Using semver comparison to check if current is behind
+			const currentParts = currentVersion.split(".").map(Number);
+			const latestParts = latestVersion.split(".").map(Number);
+
+			// Compare major.minor.patch
+			for (let i = 0; i < 3; i++) {
+				if (currentParts[i] < latestParts[i]) {
+					console.warn(
+						colors.yellow(`
+⚠️  Update available: ${currentVersion} → ${latestVersion}
+   Run ${colors.bold(`npm install -g ${packageName}`)} to update
+`)
+					);
+					break;
+				}
+			}
 		}
 	} catch (error) {
-		// Silently ignore errors (e.g., network issues, package not on npm)
-		// Optional: Log for debugging if needed
-		// console.debug("Update check failed:", error.message || error);
+		// Silently fail on update check errors
+		return;
 	}
 }
 
 // Export the utility functions needed by other modules
-export { getContent, checkForUpdates, resolveFromBaseSource };
+export { getContent, resolveFromBaseSource };
