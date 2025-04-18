@@ -171,6 +171,28 @@ async function runCli(templateSourceOpt, configSourceOpt, namedTemplateOpt, base
 				continue; // Skip to the next prompt definition
 			}
 
+			// --- Check for Dependencies ---
+			if (promptConfig.dependsOn) {
+				const parentName = promptConfig.dependsOn;
+				// We also need showIf to be defined for the dependency to make sense
+				if (typeof promptConfig.showIf === "undefined") {
+					p.log.warn(
+						`Skipping prompt "${promptConfig.name}" because 'dependsOn' is set but required condition 'showIf' is missing.`
+					);
+					continue;
+				}
+				const requiredValue = promptConfig.showIf;
+
+				// Check if the parent prompt was actually answered (it might have been skipped itself)
+				// And crucially, compare the parent's answer with the required value
+				if (!Object.prototype.hasOwnProperty.call(answers, parentName) || answers[parentName] !== requiredValue) {
+					// Dependency not met (parent not answered or answer doesn't match), skip this prompt.
+					// We don't store any answer for skipped prompts.
+					continue;
+				}
+			}
+			// --- End Dependency Check ---
+
 			const name = promptConfig.name; // Variable name (used as key in answers)
 			let value; // To store the result of the prompt
 

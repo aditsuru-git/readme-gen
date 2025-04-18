@@ -17,10 +17,6 @@ const { version: currentVersion, name: packageName = "readme-gen" } = require(".
 // Define the default output path if no output argument is provided
 const defaultOutputPath = "./README.md";
 
-// --- Asynchronous Update Check ---
-// Check for updates in the background. Doesn't block execution or throw errors on failure.
-checkForUpdates(currentVersion, packageName);
-
 // --- Command Definitions using Commander ---
 
 // Configure the main program/command (generation)
@@ -44,7 +40,7 @@ program
 		// Updated action signature
 		// baseSourceArg is now the value of the optional [base_source] argument or null
 		// options now contains options.output (defaults to './README.md')
-
+		await checkForUpdates(currentVersion, packageName); // Check for updates again
 		// --- Validate Option Combinations ---
 		const usingName = !!options.name;
 		// Check if *either* explicit flag is present (they must be used together)

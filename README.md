@@ -16,7 +16,7 @@
     <img src="https://raw.githubusercontent.com/aditsuru-git/readme-gen/main/assets/icon.png" alt="Logo" width="80" height="80">
     <h3 align="center">README Generator (@aditsuru/readme-gen)</h3>
     <p align="center">
-      Generate project READMEs (or other files!) quickly from custom templates using an interactive CLI. Supports variable substitution and conditional content blocks.
+      Generate project READMEs (or other files!) quickly from custom templates using an interactive CLI. Supports variable substitution, conditional content blocks, and follow-up questions.
       <br />
       <!-- <a href="https://github.com/aditsuru-git/readme-gen/docs"><strong>Explore the docs »</strong></a> -->
       <!-- <br /> -->
@@ -62,7 +62,11 @@
                     <li><a href="#conditional-blocks-ifendif">Conditional Blocks (IF/ENDIF)</a></li>
                 </ul>
             </li>
-            <li><a href="#configuration-file-json">Configuration File (.json)</a></li>
+            <li><a href="#configuration-file-json">Configuration File (.json)</a>
+                <ul>
+                    <li><a href="#follow-up-questions-dependsOnshowIf">Follow-up Questions (dependsOn/showIf)</a></li>
+                </ul>
+            </li>
             <li><a href="#prompt-types">Prompt Types & Options</a></li>
         </ul>
     </li>
@@ -80,7 +84,7 @@
   <img src="https://raw.githubusercontent.com/aditsuru-git/readme-gen/main/assets/screenshot.png" alt="CLI Screenshot" width="100%" style="max-width: 800px;">
 </div>
 
-`@aditsuru/readme-gen` is a command-line tool designed to streamline the creation of README files (or any text-based boilerplate) for your projects. It works by processing a template file (`.md`) and interactively asking you questions defined in a corresponding configuration file (`.json`). Your answers are then injected into the template, and conditional blocks are processed, to produce the final output file.
+`@aditsuru/readme-gen` is a command-line tool designed to streamline the creation of README files (or any text-based boilerplate) for your projects. It works by processing a template file (`.md`) and interactively asking you questions defined in a corresponding configuration file (`.json`). Your answers are then injected into the template, conditional blocks are processed, and follow-up questions can be asked based on previous answers, to produce the final output file.
 
 It supports using local template files, fetching templates from public GitHub repositories, saving configurations for quick reuse, and comes with a built-in default README template.
 
@@ -258,6 +262,10 @@ readme-gen template <command> [args...]
     readme-gen template list
     ```
 
+  ```
+
+  ```
+
 - **`remove <name>` (alias `rm`)**
 
   - Deletes a saved template configuration.
@@ -265,11 +273,18 @@ readme-gen template <command> [args...]
     readme-gen template remove my-explicit-files
     ```
 
+  ```
+
+  ```
+
 - **`default <name>`**
   - Sets a previously saved template as the default to be used when no other source is specified during generation.
   - ```bash
     readme-gen template default my-gh-repo
     ```
+  ```
+
+  ```
 
 ## Creating Custom Templates
 
@@ -300,7 +315,6 @@ To use your own templates, create two files:
 
     - Use HTML-style comments to wrap content that should only be included if a specific variable (typically from a `confirm` prompt) is `true`.
     - **Syntax:**
-
       ```markdown
       <!-- IF:{booleanVariableName} -->
 
@@ -309,12 +323,10 @@ To use your own templates, create two files:
 
       <!-- ENDIF:{booleanVariableName} -->
       ```
-
     - **Behavior:**
       - If `booleanVariableName` exists in the answers and is `true`, the `<!-- IF -->` and `<!-- ENDIF -->` tags are removed, and the content between them is kept.
       - If `booleanVariableName` is `false`, or if it's not defined in the config, or if its value is not a boolean type, the _entire block_ (including the tags and the content inside) is removed.
     - **Example:**
-
       ```markdown
       <!-- IF:{includeLicenseSection} -->
 
@@ -326,21 +338,60 @@ To use your own templates, create two files:
       ```
 
 2.  **Configuration File (`.json`):**
+
     - This file defines the questions the CLI will ask (e.g., `readme-config.json`).
     - It MUST contain a root object with a single key: `"prompts"`.
     - The value of `"prompts"` MUST be an array of prompt objects.
+
+    ### Follow-up Questions (`dependsOn`/`showIf`)
+
+    - You can make a prompt appear only if a _previous_ prompt was answered with a specific value.
+    - To do this, add two optional properties to the prompt object you want to make conditional:
+      - `dependsOn` (string, required if `showIf` is used): The `name` of the prompt this one depends on. **This parent prompt MUST be defined earlier in the `"prompts"` array.**
+      - `showIf` (any, required if `dependsOn` is used): The exact value (checked using `===`) that the parent prompt's answer must have for this follow-up prompt to be shown.
+    - If the condition is not met (parent prompt wasn't answered or the answer doesn't match `showIf`), the follow-up prompt is skipped entirely.
+
     - **Example (`my-config.json`):**
       ```json
       {
       	"prompts": [
-      		// Prompt definition objects go here...
+      		// Parent prompt
+      		{
+      			"name": "deployChoice",
+      			"type": "select",
+      			"message": "Choose deployment target:",
+      			"options": ["AWS", "GCP", "Manual"]
+      		},
+      		// Follow-up 1: Only shown if deployChoice === "AWS"
+      		{
+      			"name": "awsRegion",
+      			"type": "select",
+      			"message": "Select AWS Region:",
+      			"options": ["us-east-1", "eu-west-2"],
+      			"dependsOn": "deployChoice",
+      			"showIf": "AWS"
+      		},
+      		// Follow-up 2: Only shown if deployChoice === "Manual"
+      		{
+      			"name": "manualSteps",
+      			"type": "text",
+      			"message": "Describe manual steps:",
+      			"dependsOn": "deployChoice",
+      			"showIf": "Manual"
+      		},
+      		// Standard prompt, always shown
+      		{
+      			"name": "projectName",
+      			"type": "text",
+      			"message": "Project Name:"
+      		}
       	]
       }
       ```
 
 ### Prompt Types & Options
 
-Each object inside the `"prompts"` array defines one question. It must have `name`, `type`, and `message`. Other properties are optional depending on the type.
+Each object inside the `"prompts"` array defines one question. Besides the optional `dependsOn` and `showIf` described above, it must have `name`, `type`, and `message`. Other properties are optional depending on the type.
 
 - **Common Properties:**
 
@@ -349,6 +400,8 @@ Each object inside the `"prompts"` array defines one question. It must have `nam
   - `message` (string, required): The question text shown to the user.
   - `initialValue` (any, optional): A default value pre-filled or pre-selected.
   - `required` (boolean, optional): For `text` and `multiselect`, enforces input/selection.
+  - `dependsOn` (string, optional): See [Follow-up Questions](#follow-up-questions-dependsonshowif).
+  - `showIf` (any, optional): See [Follow-up Questions](#follow-up-questions-dependsonshowif).
 
 - **Prompt `type` Details:**
 
@@ -367,7 +420,7 @@ Each object inside the `"prompts"` array defines one question. It must have `nam
         }
         ```
 
-  2.  **`confirm`:** For Yes/No questions. Returns `true` or `false`. Crucial for conditional blocks.
+  2.  **`confirm`:** For Yes/No questions. Returns `true` or `false`. Often used as the parent prompt for follow-ups or for `<!-- IF: -->` blocks.
 
       - `initialValue` (boolean, optional): Default state (`true`=Yes, `false`=No). Defaults to `false`.
       - Example:
@@ -380,7 +433,7 @@ Each object inside the `"prompts"` array defines one question. It must have `nam
         }
         ```
 
-  3.  **`select`:** For choosing a single option from a list. Returns the `value` of the chosen option.
+  3.  **`select`:** For choosing a single option from a list. Returns the `value` of the chosen option. Can be used as a parent for follow-ups based on the selected `value`.
 
       - `options` (array, required): List of choices. Can be:
         - An array of strings: `["MIT", "Apache", "GPL"]` (value and label are the same).
@@ -401,7 +454,7 @@ Each object inside the `"prompts"` array defines one question. It must have `nam
         }
         ```
 
-  4.  **`multiselect`:** For choosing multiple options from a list. Returns an array of the `value`s of chosen options. The `${variable}` in the template will be replaced by a comma-separated string of the selected values.
+  4.  **`multiselect`:** For choosing multiple options from a list. Returns an array of the `value`s of chosen options. The `${variable}` in the template will be replaced by a comma-separated string of the selected values. _Cannot_ be directly used as a parent for follow-up questions using `showIf` (as the answer is an array, not a simple value).
       - `options` (array, required): Same format as `select`.
       - `required` (boolean, optional): If true, user must select at least one option.
       - `initialValue` (array, optional): An array of `value`s to select by default.
