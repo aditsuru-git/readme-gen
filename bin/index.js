@@ -26,7 +26,7 @@ checkForUpdates(currentVersion, packageName);
 // Configure the main program/command (generation)
 program
 	.name(packageName) // Display the package name in help messages
-	.version(currentVersion, "-V, --version", "Output the current version") // Add version flag
+	.version(currentVersion, "-v, --version", "Output the current version") // Add version flag
 	.usage("[base_source] [options]") // Updated usage string
 	.description("📝 Generate files from custom templates and configurations.")
 	// Define ONE optional positional argument for the base source
