@@ -13,7 +13,7 @@
 
 <div align="center">
   <p align="center">
-    <img src="https://raw.githubusercontent.com/aditsuru-git/readme-gen/main/assets/icon.png" alt="Logo" width="80" height="80">
+    <img src="https://github.com/aditsuru-git/readme-template/blob/main/assets/icon.png?raw=true" alt="Logo" width="80" height="80">
     <h3 align="center">README Generator (@aditsuru/readme-gen)</h3>
     <p align="center">
       Generate project READMEs (or other files!) quickly from custom templates using an interactive CLI. Supports variable substitution, conditional content blocks, follow-up questions, and custom multi-select separators.
@@ -511,7 +511,7 @@ Distributed under the MIT License. See `LICENSE` file for more information.
 <h1></h1>
 
 <div align="center">
-  <img src="https://raw.githubusercontent.com/aditsuru-git/readme-gen/main/assets/footer.png" alt="Footer Banner" width="100%" style="max-width: 1200px;">
+  <img src="https://github.com/aditsuru-git/readme-template/blob/main/assets/footer.png?raw=true" alt="Footer Banner" width="100%" style="max-width: 1200px;">
 </div>
 
 <!-- MARKDOWN LINKS & IMAGES -->
