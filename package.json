@@ -40,10 +40,10 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/aditsuru-git/readme-generator.git"
+		"url": "git+https://github.com/aditsuru-git/readme-gen.git"
 	},
 	"bugs": {
-		"url": "https://github.com/aditsuru-git/readme-generator/issues"
+		"url": "https://github.com/aditsuru-git/readme-gen/issues"
 	},
-	"homepage": "https://github.com/aditsuru-git/readme-generator#readme"
+	"homepage": "https://github.com/aditsuru-git/readme-gen#readme"
 }
